@@ -352,7 +352,7 @@ const actividades=[
   "Consultas generales","Indicaciones"
 ];
 const HKEY="oft_stats_v5", SRV_KEY="oft_server_url";
-let currentPeriod='diario', usingCloud=false, ws=null, wsUrl='';
+let currentPeriod='diario', usingCloud=false, serverUrl='';
 
 // ===== TOAST =====
 function toast(msg,type,ms=2000){
@@ -369,7 +369,7 @@ function intentarLogin(){
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('app').style.display='block';
     const srv=localStorage.getItem(SRV_KEY);
-    if(srv){reconectarWS(srv);}
+    if(srv){reconectarServidor(srv);}
     else{document.getElementById('fbModal').classList.add('open');}
     render();
   } else {
@@ -387,86 +387,105 @@ function cerrarSesion(){
   ['loginUser','loginPass'].forEach(id=>document.getElementById(id).value='');
 }
 
-// ===== RAILWAY WEBSOCKET =====
+// ===== SINCRONIZACIÓN HTTP (RAILWAY) =====
 function usarLocal(){
+  usingCloud=false;
+  serverUrl='';
   document.getElementById('fbModal').classList.remove('open');
   setSyncBadge('local');
   document.getElementById('syncNote').textContent='Modo local — datos solo en este equipo.';
   toast('💾 Modo local activado','ok');
 }
 
-function conectarServidor(){
+async function conectarServidor(){
   let url=document.getElementById('fbUrl').value.trim();
   if(!url){toast('Ingresa la URL del servidor','err');return;}
-  // Limpiar URL
   url=url.replace(/\/+$/,'');
-  localStorage.setItem(SRV_KEY,url);
-  reconectarWS(url);
-}
-
-function reconectarWS(baseUrl){
   setSyncBadge('connecting');
-  // Convertir https:// → wss://
-  wsUrl=baseUrl.replace(/^https?/,'wss').replace(/^http/,'ws');
-  intentarConexionWS();
-}
 
-function intentarConexionWS(){
   try{
-    ws=new WebSocket(wsUrl);
+    const health=await fetch(url+'/api/health',{cache:'no-store'});
+    if(!health.ok) throw new Error('Servidor no disponible');
 
-    ws.onopen=()=>{
-      usingCloud=true; setSyncBadge('cloud');
-      document.getElementById('syncNote').textContent='☁ Servidor conectado — datos sincronizados en tiempo real.';
-      document.getElementById('fbModal').classList.remove('open');
-      toast('☁ Conectado al servidor Railway','ok',3000);
-    };
+    serverUrl=url;
+    usingCloud=true;
+    localStorage.setItem(SRV_KEY,url);
 
-    ws.onmessage=(evt)=>{
-      try{
-        const msg=JSON.parse(evt.data);
-        if((msg.tipo==='inicial'||msg.tipo==='actualizacion') && msg.datos){
-          localStorage.setItem(HKEY,JSON.stringify(msg.datos));
-          render();
-        }
-      }catch(e){}
-    };
+    const res=await fetch(url+'/api/datos',{cache:'no-store'});
+    if(res.ok){
+      const remoto=await res.json();
+      if(remoto && typeof remoto==='object' && Object.keys(remoto).length){
+        localStorage.setItem(HKEY,JSON.stringify(remoto));
+      } else {
+        await sincronizarNube(getH(), false);
+      }
+    }
 
-    ws.onclose=()=>{
-      usingCloud=false; setSyncBadge('local');
-      // Reintentar conexión en 5 segundos
-      setTimeout(()=>{ if(wsUrl) intentarConexionWS(); },5000);
-    };
-
-    ws.onerror=()=>{
-      setSyncBadge('local');
-      toast('⚠ Error de conexión — reintentando...','err',2000);
-    };
+    setSyncBadge('cloud');
+    document.getElementById('syncNote').textContent='☁ Servidor conectado — datos sincronizados.';
+    document.getElementById('fbModal').classList.remove('open');
+    render();
+    toast('☁ Conectado al servidor Railway','ok',3000);
   }catch(e){
+    usingCloud=false;
+    serverUrl='';
     setSyncBadge('local');
-    toast('Error al conectar con el servidor','err');
+    document.getElementById('syncNote').textContent='Modo local — no se pudo conectar al servidor.';
+    toast('⚠ No se pudo conectar al servidor','err',2500);
   }
 }
 
-function setSyncBadge(m){
-  const b=document.getElementById('syncBadge');
-  b.className='sync-badge '+m;
-  b.innerHTML=`<span class="sync-dot"></span>${{local:'💾 LOCAL',cloud:'☁ SERVIDOR',connecting:'⟳ CONECTANDO'}[m]}`;
+async function reconectarServidor(baseUrl){
+  if(!baseUrl) return;
+  document.getElementById('fbUrl').value=baseUrl;
+  try{
+    const health=await fetch(baseUrl+'/api/health',{cache:'no-store'});
+    if(!health.ok) throw new Error('Servidor no disponible');
+    serverUrl=baseUrl;
+    usingCloud=true;
+    setSyncBadge('cloud');
+    document.getElementById('syncNote').textContent='☁ Servidor conectado — datos sincronizados.';
+
+    const res=await fetch(baseUrl+'/api/datos',{cache:'no-store'});
+    if(res.ok){
+      const remoto=await res.json();
+      if(remoto && typeof remoto==='object' && Object.keys(remoto).length){
+        localStorage.setItem(HKEY,JSON.stringify(remoto));
+      }
+    }
+  }catch(e){
+    usingCloud=false;
+    serverUrl='';
+    setSyncBadge('local');
+    document.getElementById('syncNote').textContent='Modo local — servidor no disponible.';
+  }
+}
+
+async function sincronizarNube(data, mostrarError=true){
+  if(!usingCloud || !serverUrl) return true;
+  try{
+    const res=await fetch(serverUrl+'/api/datos',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(data)
+    });
+    if(!res.ok) throw new Error('Error al guardar');
+    return true;
+  }catch(e){
+    usingCloud=false;
+    serverUrl='';
+    setSyncBadge('local');
+    document.getElementById('syncNote').textContent='Modo local — error al sincronizar con el servidor.';
+    if(mostrarError) toast('⚠ Error al sincronizar — guardado local activo','err',2500);
+    return false;
+  }
 }
 
 // ===== STORAGE =====
 function getH(){try{return JSON.parse(localStorage.getItem(HKEY))||{};}catch{return{};}}
 function saveH(h){
   localStorage.setItem(HKEY,JSON.stringify(h));
-  // Enviar al servidor via HTTP POST (más confiable que WS para escritura)
-  if(usingCloud && wsUrl){
-    const httpUrl=wsUrl.replace(/^wss?/,'https').replace(/^ws:/,'http:');
-    fetch(httpUrl+'/api/datos',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(h)
-    }).catch(()=>toast('⚠ Error al sincronizar','err'));
-  }
+  sincronizarNube(h);
 }
 function fk(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
 function mk(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;}
@@ -552,9 +571,8 @@ function reiniciarPeriodo(){
 function borrarHistorial(){
   if(!confirm('¿BORRAR TODO el historial del sistema? Esta acción no se puede deshacer.'))return;
   localStorage.removeItem(HKEY);
-  if(usingCloud && wsUrl){
-    const httpUrl=wsUrl.replace(/^wss?/,'https').replace(/^ws:/,'http:');
-    fetch(httpUrl+'/api/datos',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{});
+  if(usingCloud && serverUrl){
+    fetch(serverUrl+'/api/datos',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{});
   }
   render();toast('✕ Historial borrado completamente','err');
 }
