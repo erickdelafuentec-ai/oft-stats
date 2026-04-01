@@ -1,709 +1,1269 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sistema de Estadística Diaria</title>
-  <style>
-    :root {
-      --bg1:#06111f;
-      --bg2:#0a1830;
-      --panel:rgba(10,24,48,.72);
-      --panel2:rgba(11,33,66,.85);
-      --line:rgba(108,155,255,.18);
-      --text:#e7f1ff;
-      --muted:#8da9d6;
-      --primary:#39a0ff;
-      --primary2:#62ffd3;
-      --danger:#ff6b7a;
-      --shadow:0 14px 40px rgba(0,0,0,.35);
-      --radius:22px;
-    }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OFT-STATS // Sistema de Estadística</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#020b18;
+  --panel:#040f20;
+  --panel2:#061428;
+  --border:#0a3a6e;
+  --border2:#0d4f9a;
+  --cyan:#00e5ff;
+  --cyan2:#00b4cc;
+  --blue:#1565ff;
+  --blue2:#0d47d9;
+  --green:#00ff88;
+  --green2:#00cc6a;
+  --red:#ff2244;
+  --red2:#cc1133;
+  --yellow:#ffcc00;
+  --text:#c8e8ff;
+  --text2:#7aaed8;
+  --text3:#3d6a96;
+  --glow-cyan:0 0 20px rgba(0,229,255,.4), 0 0 40px rgba(0,229,255,.15);
+  --glow-blue:0 0 20px rgba(21,101,255,.5);
+  --glow-green:0 0 20px rgba(0,255,136,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Rajdhani',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
 
-    * { box-sizing:border-box; }
-    body {
-      margin:0;
-      font-family:Segoe UI, Tahoma, Arial, sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(57,160,255,.18), transparent 28%),
-        radial-gradient(circle at top right, rgba(98,255,211,.12), transparent 24%),
-        linear-gradient(180deg, var(--bg1), var(--bg2));
-      min-height:100vh;
-    }
+/* ===== SCANLINE OVERLAY ===== */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);
+  pointer-events:none;
+  z-index:9999;
+}
 
-    .grid-bg {
-      position:fixed; inset:0; pointer-events:none; opacity:.18;
-      background-image:
-        linear-gradient(rgba(100,150,255,.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(100,150,255,.08) 1px, transparent 1px);
-      background-size:26px 26px;
-      mask-image:linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.3));
-    }
+/* ===== GRID BG ===== */
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(0,100,200,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,100,200,.04) 1px,transparent 1px);
+  background-size:50px 50px;
+  pointer-events:none;
+  z-index:0;
+}
 
-    .wrap { max-width:1480px; margin:0 auto; padding:26px; }
-    .header {
-      display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;
-      margin-bottom:22px; align-items:flex-start;
-    }
-    .title-box h1 {
-      margin:0; font-size:38px; letter-spacing:.4px;
-      text-shadow:0 0 20px rgba(57,160,255,.22);
-    }
-    .title-box p { margin:8px 0 0; color:var(--muted); font-size:15px; }
+/* ===== LOGIN ===== */
+#loginScreen{
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:radial-gradient(ellipse at 50% 40%, #041830 0%, #010a14 100%);
+}
 
-    .glow-card {
-      background:linear-gradient(180deg, rgba(14,32,63,.92), rgba(7,20,40,.85));
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.04);
-      backdrop-filter: blur(10px);
-    }
+.login-box{
+  width:420px;
+  position:relative;
+}
 
-    .info-box { min-width:320px; padding:18px 20px; }
-    .mini { color:var(--muted); font-size:13px; margin-bottom:6px; }
-    .today { font-size:26px; font-weight:800; margin-bottom:10px; }
-    .status {
-      display:inline-flex; align-items:center; gap:10px; border-radius:999px;
-      padding:9px 14px; background:rgba(98,255,211,.08); color:#93ffd6; font-size:13px; font-weight:700;
-      border:1px solid rgba(98,255,211,.18);
-    }
-    .dot {
-      width:10px; height:10px; border-radius:50%;
-      background:linear-gradient(180deg, #62ffd3, #20c997);
-      box-shadow:0 0 12px rgba(98,255,211,.7);
-    }
+.login-corner{
+  position:absolute;
+  width:20px;height:20px;
+  border-color:var(--cyan);
+  border-style:solid;
+}
+.login-corner.tl{top:0;left:0;border-width:2px 0 0 2px}
+.login-corner.tr{top:0;right:0;border-width:2px 2px 0 0}
+.login-corner.bl{bottom:0;left:0;border-width:0 0 2px 2px}
+.login-corner.br{bottom:0;right:0;border-width:0 2px 2px 0}
 
-    .nav {
-      display:flex; flex-wrap:wrap; gap:10px; margin-bottom:22px;
-    }
-    .nav-btn, .btn, select {
-      border:none; border-radius:14px; padding:12px 16px;
-      font-size:14px; font-weight:700; cursor:pointer;
-      transition:.18s ease; color:var(--text);
-    }
-    .nav-btn {
-      background:rgba(57,160,255,.08);
-      border:1px solid rgba(57,160,255,.18);
-    }
-    .nav-btn.active {
-      background:linear-gradient(90deg, rgba(57,160,255,.24), rgba(98,255,211,.18));
-      box-shadow:0 0 0 1px rgba(98,255,211,.15) inset, 0 0 18px rgba(57,160,255,.12);
-    }
-    .btn {
-      background:linear-gradient(90deg, rgba(57,160,255,.18), rgba(98,255,211,.12));
-      border:1px solid rgba(57,160,255,.2);
-    }
-    .btn:hover, .nav-btn:hover { transform:translateY(-1px); }
-    .btn-primary {
-      background:linear-gradient(90deg, var(--primary), #4cb9ff);
-      color:#04101e; font-weight:800;
-      box-shadow:0 10px 24px rgba(57,160,255,.22);
-    }
-    .btn-danger {
-      background:linear-gradient(90deg, rgba(255,107,122,.18), rgba(255,107,122,.08));
-      border:1px solid rgba(255,107,122,.2);
-    }
-    select {
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(57,160,255,.18);
-    }
+.login-inner{
+  background:rgba(4,15,32,.95);
+  border:1px solid var(--border2);
+  padding:44px 40px;
+  position:relative;
+}
 
-    .view { display:none; }
-    .view.active { display:block; }
+.login-logo{
+  text-align:center;
+  margin-bottom:32px;
+}
+.login-logo .eye-icon{
+  font-size:48px;
+  display:block;
+  margin-bottom:12px;
+  filter:drop-shadow(0 0 12px var(--cyan));
+}
+.login-logo h1{
+  font-family:'Orbitron',monospace;
+  font-size:22px;
+  font-weight:900;
+  color:var(--cyan);
+  text-shadow:var(--glow-cyan);
+  letter-spacing:4px;
+}
+.login-logo p{
+  font-size:13px;
+  color:var(--text3);
+  letter-spacing:2px;
+  margin-top:6px;
+  font-family:'Share Tech Mono',monospace;
+}
 
-    .cards {
-      display:grid; grid-template-columns:repeat(4,minmax(180px,1fr)); gap:16px; margin-bottom:22px;
-    }
-    .card { padding:18px; }
-    .label {
-      font-size:12px; color:#9fb8de; text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px; font-weight:700;
-    }
-    .value { font-size:34px; font-weight:900; line-height:1.05; }
-    .sub { margin-top:8px; color:var(--muted); font-size:13px; }
+.login-field{
+  margin-bottom:20px;
+}
+.login-field label{
+  display:block;
+  font-size:11px;
+  letter-spacing:3px;
+  color:var(--text2);
+  margin-bottom:8px;
+  font-family:'Share Tech Mono',monospace;
+}
+.login-field input{
+  width:100%;
+  background:rgba(0,100,180,.08);
+  border:1px solid var(--border2);
+  border-radius:4px;
+  padding:14px 16px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:15px;
+  color:var(--cyan);
+  outline:none;
+  transition:.2s;
+}
+.login-field input:focus{
+  border-color:var(--cyan);
+  box-shadow:var(--glow-cyan);
+  background:rgba(0,229,255,.05);
+}
 
-    .section-title { margin:0 0 14px; font-size:23px; }
-    .section-sub { color:var(--muted); margin:-4px 0 16px; font-size:14px; }
-    .toolbar {
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px;
-    }
+.login-btn{
+  width:100%;
+  background:linear-gradient(135deg,var(--blue),var(--cyan2));
+  border:none;
+  border-radius:4px;
+  padding:16px;
+  font-family:'Orbitron',monospace;
+  font-size:13px;
+  font-weight:700;
+  color:#fff;
+  letter-spacing:3px;
+  cursor:pointer;
+  transition:.2s;
+  margin-top:8px;
+  text-shadow:0 0 10px rgba(255,255,255,.3);
+}
+.login-btn:hover{
+  box-shadow:var(--glow-blue);
+  transform:translateY(-2px);
+}
 
-    .grid-activities { display:grid; gap:12px; }
-    .activity {
-      display:grid; grid-template-columns:1.7fr 120px 190px;
-      gap:12px; align-items:center; padding:14px;
-      border-radius:18px;
-      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-      border:1px solid rgba(108,155,255,.14);
-    }
-    .activity-name { font-weight:800; font-size:15px; }
-    .activity-tag {
-      display:inline-block; margin-top:7px; padding:5px 10px; font-size:12px; border-radius:999px;
-      background:rgba(57,160,255,.08); color:#9fc7ff; font-weight:700; border:1px solid rgba(57,160,255,.12);
-    }
-    .counter {
-      text-align:center; border-radius:16px; padding:10px 8px;
-      background:rgba(255,255,255,.03); border:1px solid rgba(108,155,255,.15);
-    }
-    .counter span {
-      display:block; color:var(--muted); font-size:11px; margin-bottom:5px; text-transform:uppercase; letter-spacing:.06em; font-weight:700;
-    }
-    .counter strong { font-size:30px; line-height:1; }
-    .mini-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .mini-btn {
-      border:none; border-radius:12px; padding:12px 10px; font-size:14px; font-weight:900; cursor:pointer; transition:.18s ease;
-      color:#04101e;
-    }
-    .plus {
-      background:linear-gradient(90deg, #39a0ff, #66c7ff);
-      box-shadow:0 10px 18px rgba(57,160,255,.16);
-    }
-    .minus {
-      background:linear-gradient(90deg, #ff8d99, #ffb3bb);
-      box-shadow:0 10px 18px rgba(255,107,122,.12);
-    }
-    .panel-note {
-      margin-top:14px; padding:14px; border-radius:16px;
-      background:rgba(98,255,211,.05); color:#b7d3ff;
-      border:1px dashed rgba(98,255,211,.18);
-    }
+.login-error{
+  background:rgba(255,34,68,.1);
+  border:1px solid var(--red);
+  border-radius:4px;
+  padding:10px 14px;
+  font-size:13px;
+  color:var(--red);
+  margin-top:16px;
+  display:none;
+  text-align:center;
+  font-family:'Share Tech Mono',monospace;
+}
 
-    .dashboard-grid {
-      display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px;
-    }
-    .metric {
-      padding:16px; border-radius:18px;
-      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
-      border:1px solid rgba(108,155,255,.14);
-    }
-    .metric-title {
-      color:#9fb8de; font-size:12px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; font-weight:700;
-    }
-    .metric-value { font-size:28px; font-weight:900; }
+.login-status{
+  text-align:center;
+  margin-top:20px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;
+  color:var(--text3);
+  letter-spacing:2px;
+}
+.status-dot{
+  display:inline-block;
+  width:8px;height:8px;
+  background:var(--green);
+  border-radius:50%;
+  margin-right:6px;
+  box-shadow:var(--glow-green);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-    .chart-wrap {
-      padding:16px; border-radius:20px;
-      background:
-        radial-gradient(circle at top center, rgba(57,160,255,.08), transparent 45%),
-        rgba(255,255,255,.02);
-      border:1px solid rgba(108,155,255,.14);
-    }
-    .chart-title { font-size:16px; font-weight:900; margin-bottom:12px; }
-    canvas { width:100%; height:340px; display:block; }
+/* ===== MAIN APP ===== */
+#app{display:none;min-height:100vh;position:relative;z-index:1}
 
-    .layout-stats { display:grid; grid-template-columns:1.1fr 1fr; gap:20px; }
-    .ranking-item { margin-bottom:14px; }
-    .ranking-top { display:flex; justify-content:space-between; gap:12px; font-size:14px; margin-bottom:6px; }
-    .bar {
-      width:100%; height:12px; border-radius:999px; overflow:hidden;
-      background:rgba(255,255,255,.05); border:1px solid rgba(108,155,255,.1);
-    }
-    .bar > div {
-      height:100%;
-      background:linear-gradient(90deg, #39a0ff, #62ffd3);
-      box-shadow:0 0 14px rgba(57,160,255,.25);
-    }
+/* ===== TOPBAR ===== */
+.topbar{
+  position:sticky;
+  top:0;z-index:100;
+  background:rgba(2,11,24,.95);
+  border-bottom:1px solid var(--border);
+  padding:0 28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  height:64px;
+  backdrop-filter:blur(12px);
+}
+.topbar-brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.topbar-brand .logo-text{
+  font-family:'Orbitron',monospace;
+  font-size:16px;
+  font-weight:900;
+  color:var(--cyan);
+  text-shadow:var(--glow-cyan);
+  letter-spacing:2px;
+}
+.topbar-brand .logo-sub{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;
+  color:var(--text3);
+  letter-spacing:2px;
+  margin-top:2px;
+}
+.topbar-right{
+  display:flex;
+  align-items:center;
+  gap:20px;
+}
+.topbar-date{
+  font-family:'Share Tech Mono',monospace;
+  font-size:13px;
+  color:var(--cyan2);
+  letter-spacing:1px;
+}
+.topbar-user{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  color:var(--text2);
+}
+.user-badge{
+  background:rgba(0,229,255,.1);
+  border:1px solid var(--border2);
+  border-radius:4px;
+  padding:4px 10px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;
+  color:var(--cyan);
+  letter-spacing:1px;
+}
+.btn-logout{
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:6px 12px;
+  font-family:'Rajdhani',sans-serif;
+  font-size:13px;
+  color:var(--text3);
+  cursor:pointer;
+  transition:.2s;
+  letter-spacing:1px;
+}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
 
-    .history-table-wrap {
-      overflow:auto; border-radius:16px; border:1px solid rgba(108,155,255,.14);
-      background:rgba(255,255,255,.02);
-    }
-    table {
-      width:100%; border-collapse:collapse; min-width:720px;
-    }
-    th, td {
-      padding:12px 10px; border-bottom:1px solid rgba(108,155,255,.08); text-align:left; font-size:14px;
-    }
-    th {
-      color:#b9d5ff; position:sticky; top:0; z-index:1;
-      background:rgba(9,23,45,.96);
-    }
-    .empty { text-align:center; color:var(--muted); padding:20px; font-size:14px; }
-    .chip {
-      display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800; margin:2px 6px 2px 0;
-      background:rgba(57,160,255,.08); color:#a9ccff; border:1px solid rgba(57,160,255,.12);
-    }
-    .footer {
-      margin-top:20px; color:var(--muted); font-size:13px; text-align:center;
-    }
+/* ===== NAV ===== */
+.nav{
+  display:flex;
+  gap:4px;
+  padding:14px 28px 0;
+  border-bottom:1px solid var(--border);
+  background:rgba(4,15,32,.8);
+}
+.nav-btn{
+  background:transparent;
+  border:none;
+  border-bottom:2px solid transparent;
+  padding:10px 20px;
+  font-family:'Rajdhani',sans-serif;
+  font-size:14px;
+  font-weight:700;
+  color:var(--text3);
+  cursor:pointer;
+  transition:.2s;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:-1px;
+}
+.nav-btn:hover{color:var(--text2)}
+.nav-btn.active{
+  color:var(--cyan);
+  border-bottom-color:var(--cyan);
+  text-shadow:0 0 10px rgba(0,229,255,.5);
+}
 
-    @media (max-width:1100px) {
-      .cards { grid-template-columns:repeat(2,minmax(180px,1fr)); }
-      .layout-stats { grid-template-columns:1fr; }
-      .dashboard-grid { grid-template-columns:1fr; }
-    }
-    @media (max-width:760px) {
-      .wrap { padding:14px; }
-      .cards { grid-template-columns:1fr; }
-      .activity { grid-template-columns:1fr; }
-    }
-  </style>
+/* ===== CONTENT ===== */
+.content{padding:24px 28px;max-width:1500px;margin:0 auto}
+.view{display:none}
+.view.active{display:block}
+
+/* ===== CARDS GRID ===== */
+.stat-cards{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+  margin-bottom:24px;
+}
+.stat-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:20px;
+  position:relative;
+  overflow:hidden;
+  transition:.2s;
+}
+.stat-card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,var(--cyan),var(--blue));
+}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.stat-card .sc-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;
+  letter-spacing:2px;
+  color:var(--text3);
+  margin-bottom:12px;
+  text-transform:uppercase;
+}
+.stat-card .sc-value{
+  font-family:'Orbitron',monospace;
+  font-size:36px;
+  font-weight:700;
+  color:var(--cyan);
+  text-shadow:var(--glow-cyan);
+  line-height:1;
+}
+.stat-card .sc-sub{
+  margin-top:8px;
+  font-size:12px;
+  color:var(--text3);
+  letter-spacing:1px;
+}
+.stat-card .sc-icon{
+  position:absolute;
+  right:16px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:36px;
+  opacity:.07;
+}
+
+/* ===== PANEL ===== */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:24px;
+  margin-bottom:20px;
+  position:relative;
+}
+.panel-title{
+  font-family:'Orbitron',monospace;
+  font-size:14px;
+  font-weight:700;
+  color:var(--cyan);
+  letter-spacing:3px;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+.panel-sub{
+  font-size:13px;
+  color:var(--text3);
+  margin-bottom:20px;
+  letter-spacing:1px;
+}
+
+/* ===== TOOLBAR ===== */
+.toolbar{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+  margin-bottom:20px;
+}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  border-radius:4px;
+  padding:10px 16px;
+  font-family:'Rajdhani',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  cursor:pointer;
+  border:1px solid;
+  transition:.2s;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn-cyan{
+  background:rgba(0,229,255,.1);
+  border-color:var(--cyan2);
+  color:var(--cyan);
+}
+.btn-cyan:hover{background:rgba(0,229,255,.2);box-shadow:var(--glow-cyan)}
+.btn-green{
+  background:rgba(0,255,136,.08);
+  border-color:var(--green2);
+  color:var(--green);
+}
+.btn-green:hover{background:rgba(0,255,136,.15);box-shadow:var(--glow-green)}
+.btn-red{
+  background:rgba(255,34,68,.08);
+  border-color:var(--red2);
+  color:var(--red);
+}
+.btn-red:hover{background:rgba(255,34,68,.15)}
+
+select.sel{
+  background:rgba(0,100,180,.08);
+  border:1px solid var(--border2);
+  border-radius:4px;
+  padding:10px 14px;
+  font-family:'Rajdhani',sans-serif;
+  font-size:13px;
+  color:var(--cyan);
+  cursor:pointer;
+  outline:none;
+}
+
+/* ===== ACTIVITY ROWS ===== */
+.activities-grid{display:grid;gap:10px}
+.act-row{
+  display:grid;
+  grid-template-columns:1fr 120px 200px;
+  gap:14px;
+  align-items:center;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:14px 18px;
+  transition:.2s;
+}
+.act-row:hover{border-color:var(--border2)}
+.act-name{
+  font-size:15px;
+  font-weight:700;
+  color:var(--text);
+  letter-spacing:.5px;
+}
+.act-tag{
+  display:inline-block;
+  margin-top:5px;
+  padding:3px 10px;
+  background:rgba(0,100,180,.15);
+  border:1px solid var(--border);
+  border-radius:2px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;
+  color:var(--text3);
+  letter-spacing:1px;
+}
+.counter-box{
+  text-align:center;
+  background:rgba(0,229,255,.04);
+  border:1px solid var(--border2);
+  border-radius:4px;
+  padding:10px;
+}
+.counter-box span{
+  display:block;
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;
+  color:var(--text3);
+  letter-spacing:2px;
+  margin-bottom:4px;
+}
+.counter-box strong{
+  font-family:'Orbitron',monospace;
+  font-size:28px;
+  font-weight:700;
+  color:var(--cyan);
+  text-shadow:var(--glow-cyan);
+  line-height:1;
+}
+.act-btns{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.act-btn{
+  border:none;
+  border-radius:4px;
+  padding:12px 8px;
+  font-family:'Orbitron',monospace;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.15s;
+  letter-spacing:1px;
+}
+.act-plus{
+  background:linear-gradient(135deg,rgba(21,101,255,.8),rgba(0,229,255,.6));
+  color:#fff;
+  border:1px solid rgba(0,229,255,.3);
+}
+.act-plus:hover{box-shadow:var(--glow-cyan);transform:scale(1.03)}
+.act-minus{
+  background:rgba(255,34,68,.1);
+  color:var(--red);
+  border:1px solid rgba(255,34,68,.3);
+}
+.act-minus:hover{background:rgba(255,34,68,.2)}
+
+/* ===== DASHBOARD ===== */
+.dash-metrics{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin-bottom:20px;
+}
+.dash-metric{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:18px;
+  position:relative;
+}
+.dash-metric::after{
+  content:'';
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  opacity:.5;
+}
+.dm-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;
+  color:var(--text3);
+  letter-spacing:2px;
+  margin-bottom:8px;
+  text-transform:uppercase;
+}
+.dm-value{
+  font-family:'Orbitron',monospace;
+  font-size:30px;
+  font-weight:700;
+  color:var(--cyan);
+  text-shadow:var(--glow-cyan);
+}
+
+.charts-grid{
+  display:grid;
+  grid-template-columns:1.4fr 1fr;
+  gap:20px;
+  margin-bottom:20px;
+}
+.chart-panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:20px;
+}
+.chart-panel-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;
+  color:var(--text3);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+canvas{max-height:300px}
+
+/* ===== RANKING ===== */
+.ranking-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin-bottom:20px;
+}
+.rank-item{margin-bottom:12px}
+.rank-top{
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+  margin-bottom:6px;
+  color:var(--text2);
+  letter-spacing:.5px;
+}
+.rank-top strong{
+  font-family:'Orbitron',monospace;
+  font-size:14px;
+  color:var(--cyan);
+}
+.rank-bar{
+  height:6px;
+  background:rgba(0,100,180,.15);
+  border-radius:2px;
+  overflow:hidden;
+}
+.rank-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--blue),var(--cyan));
+  border-radius:2px;
+  box-shadow:0 0 8px rgba(0,229,255,.3);
+  transition:width .5s ease;
+}
+
+/* ===== TABLE ===== */
+.table-wrap{
+  overflow:auto;
+  border:1px solid var(--border);
+  border-radius:6px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:600px;
+}
+th{
+  background:rgba(0,100,180,.15);
+  padding:12px 14px;
+  text-align:left;
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;
+  color:var(--text3);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;
+}
+td{
+  padding:11px 14px;
+  border-bottom:1px solid rgba(10,58,110,.3);
+  font-size:14px;
+  color:var(--text2);
+}
+tr:hover td{background:rgba(0,100,180,.05)}
+.td-num{
+  font-family:'Orbitron',monospace;
+  color:var(--cyan);
+  font-size:16px;
+  font-weight:700;
+}
+
+/* ===== CHIPS ===== */
+.chip{
+  display:inline-block;
+  padding:5px 12px;
+  background:rgba(0,100,180,.12);
+  border:1px solid var(--border);
+  border-radius:2px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;
+  color:var(--text2);
+  margin:3px;
+  letter-spacing:1px;
+}
+
+/* ===== FOOTER ===== */
+.footer{
+  padding:20px 28px;
+  border-top:1px solid var(--border);
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;
+  color:var(--text3);
+  letter-spacing:2px;
+  text-align:center;
+}
+
+/* ===== EMPTY ===== */
+.empty{
+  text-align:center;
+  padding:30px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:12px;
+  color:var(--text3);
+  letter-spacing:2px;
+}
+
+/* ===== PANEL NOTE ===== */
+.panel-note{
+  background:rgba(0,100,180,.06);
+  border:1px dashed rgba(0,100,180,.3);
+  border-radius:4px;
+  padding:12px 16px;
+  font-size:13px;
+  color:var(--text3);
+  margin-top:16px;
+  letter-spacing:.5px;
+  font-family:'Share Tech Mono',monospace;
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1100px){
+  .stat-cards{grid-template-columns:repeat(2,1fr)}
+  .charts-grid{grid-template-columns:1fr}
+  .ranking-grid{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .stat-cards{grid-template-columns:1fr}
+  .act-row{grid-template-columns:1fr}
+  .content{padding:16px}
+}
+
+/* ===== ANIM ===== */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.view.active>*{animation:fadeIn .3s ease forwards}
+</style>
 </head>
 <body>
-  <div class="grid-bg"></div>
-  <div class="wrap">
-    <div class="header">
-      <div class="title-box">
-        <h1>Sistema de Estadística Diaria</h1>
-        <p>Versión mejorada con interfaz futurista y una sola descarga de Excel real con gráficos incluidos.</p>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-corner tl"></div>
+    <div class="login-corner tr"></div>
+    <div class="login-corner bl"></div>
+    <div class="login-corner br"></div>
+    <div class="login-inner">
+      <div class="login-logo">
+        <span class="eye-icon">👁</span>
+        <h1>OFT-STATS</h1>
+        <p>// SISTEMA DE ESTADÍSTICA DIARIA //</p>
       </div>
-      <div class="glow-card info-box">
-        <div class="mini">Fecha activa del sistema</div>
-        <div class="today" id="fechaHoyTexto"></div>
-        <div class="status"><span class="dot"></span> Conteo activo del día</div>
+      <div class="login-field">
+        <label>USUARIO</label>
+        <input type="text" id="loginUser" placeholder="usuario" autocomplete="off"/>
+      </div>
+      <div class="login-field">
+        <label>CONTRASEÑA</label>
+        <input type="password" id="loginPass" placeholder="••••••••"/>
+      </div>
+      <button class="login-btn" onclick="intentarLogin()">ACCEDER AL SISTEMA</button>
+      <div class="login-error" id="loginError">// ACCESO DENEGADO — CREDENCIALES INVÁLIDAS //</div>
+      <div class="login-status">
+        <span class="status-dot"></span>SISTEMA EN LÍNEA · SEGURO
       </div>
     </div>
+  </div>
+</div>
 
-    <div class="nav">
-      <button class="nav-btn active" data-view="vista-registro">Trabajo Auto Suma</button>
-      <button class="nav-btn" data-view="vista-estadisticas">Estadísticas y Dashboard</button>
+<!-- ===== APP ===== -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div>
+        <div class="logo-text">👁 OFT-STATS</div>
+        <div class="logo-sub">// SISTEMA ESTADÍSTICA OFTALMOLOGÍA //</div>
+      </div>
     </div>
+    <div class="topbar-right">
+      <div class="topbar-date" id="fechaTopbar"></div>
+      <div class="topbar-user">
+        <div class="user-badge" id="userBadge">VENTANILLA</div>
+      </div>
+      <button class="btn-logout" onclick="cerrarSesion()">⏻ SALIR</button>
+    </div>
+  </div>
 
-    <section id="vista-registro" class="view active">
-      <div class="cards">
-        <div class="glow-card card">
-          <div class="label">Total actividades hoy</div>
-          <div class="value" id="totalHoy">0</div>
-          <div class="sub">Suma de todas las acciones registradas hoy.</div>
+  <!-- NAV -->
+  <div class="nav">
+    <button class="nav-btn active" data-view="v-registro">⬡ Registro Diario</button>
+    <button class="nav-btn" data-view="v-dashboard">◈ Dashboard</button>
+    <button class="nav-btn" data-view="v-historial">◉ Historial</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ===== REGISTRO ===== -->
+    <section id="v-registro" class="view active">
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="sc-icon">📊</div>
+          <div class="sc-label">TOTAL ACTIVIDADES HOY</div>
+          <div class="sc-value" id="totalHoy">0</div>
+          <div class="sc-sub">Suma acumulada del día activo</div>
         </div>
-        <div class="glow-card card">
-          <div class="label">Actividad más realizada</div>
-          <div class="value" id="topActividad" style="font-size:24px;">Sin registros</div>
-          <div class="sub">Se actualiza automáticamente durante el día.</div>
+        <div class="stat-card">
+          <div class="sc-icon">🏆</div>
+          <div class="sc-label">ACTIVIDAD LÍDER</div>
+          <div class="sc-value" id="topActividad" style="font-size:18px;line-height:1.2">—</div>
+          <div class="sc-sub">Mayor cantidad registrada hoy</div>
         </div>
-        <div class="glow-card card">
-          <div class="label">Cantidad de actividades</div>
-          <div class="value" id="cantidadActividades">0</div>
-          <div class="sub">Número de categorías configuradas.</div>
+        <div class="stat-card">
+          <div class="sc-icon">📋</div>
+          <div class="sc-label">CATEGORÍAS CONFIG.</div>
+          <div class="sc-value" id="cantActividades">0</div>
+          <div class="sc-sub">Actividades en el sistema</div>
         </div>
-        <div class="glow-card card">
-          <div class="label">Registros guardados</div>
-          <div class="value" id="diasGuardados">0</div>
-          <div class="sub">Cantidad de días con historial almacenado.</div>
+        <div class="stat-card">
+          <div class="sc-icon">💾</div>
+          <div class="sc-label">DÍAS EN HISTORIAL</div>
+          <div class="sc-value" id="diasGuardados">0</div>
+          <div class="sc-sub">Registros históricos guardados</div>
         </div>
       </div>
 
-      <div class="glow-card card">
-        <h2 class="section-title">Trabajo de Auto Suma</h2>
-        <p class="section-sub">Presiona <strong>+1 Auto suma</strong> cada vez que realices una actividad. También puedes restar si te equivocas.</p>
+      <div class="panel">
+        <div class="panel-title">⬡ REGISTRO DE AUTO-SUMA</div>
+        <div class="panel-sub">Presiona +1 cada vez que realices una actividad. Los datos se guardan automáticamente.</div>
 
         <div class="toolbar">
-          <button class="btn" id="btnReiniciarDia">Reiniciar conteo del día</button>
-          <button class="btn btn-primary" id="btnDescargarExcelReal">Descargar Excel real con gráficos</button>
-          <button class="btn btn-danger" id="btnBorrarHistorial">Borrar todo el historial</button>
+          <button class="btn btn-cyan" onclick="reiniciarDia()">↺ REINICIAR DÍA</button>
+          <button class="btn btn-green" onclick="exportarXLSX()">⬇ EXPORTAR EXCEL (.xlsx)</button>
+          <button class="btn btn-red" onclick="borrarHistorial()">✕ BORRAR HISTORIAL</button>
         </div>
 
-        <div class="grid-activities" id="listaActividades"></div>
+        <div class="activities-grid" id="listaActividades"></div>
 
-        <div class="panel-note">
-          Ahora queda un solo archivo Excel para descargar. Ese Excel ya viene armado con dashboard y gráficos. El conteo de la página sigue funcionando aparte dentro del HTML.
+        <div class="panel-note">// El conteo se guarda automáticamente en el navegador. Al cambiar la fecha, el sistema inicia un nuevo día y conserva el historial anterior.</div>
+      </div>
+    </section>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section id="v-dashboard" class="view">
+      <div class="panel">
+        <div class="panel-title">◈ DASHBOARD ANALÍTICO</div>
+        <div class="toolbar">
+          <label style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:2px">PERÍODO:</label>
+          <select class="sel" id="filtroDash" onchange="renderDashboard()">
+            <option value="hoy">Hoy</option>
+            <option value="historico">Histórico acumulado</option>
+          </select>
+          <button class="btn btn-green" onclick="exportarXLSX()">⬇ EXPORTAR EXCEL (.xlsx)</button>
+        </div>
+
+        <div class="dash-metrics">
+          <div class="dash-metric">
+            <div class="dm-title">TOTAL DEL PERÍODO</div>
+            <div class="dm-value" id="dashTotal">0</div>
+          </div>
+          <div class="dash-metric">
+            <div class="dm-title">ACTIVIDAD LÍDER</div>
+            <div class="dm-value" id="dashTop" style="font-size:18px;line-height:1.3">—</div>
+          </div>
+          <div class="dash-metric">
+            <div class="dm-title">CATEGORÍAS ACTIVAS</div>
+            <div class="dm-value" id="dashActivas">0</div>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-panel">
+            <div class="chart-panel-title">▸ DISTRIBUCIÓN DE ACTIVIDADES (BARRAS)</div>
+            <canvas id="chartBarras"></canvas>
+          </div>
+          <div class="chart-panel">
+            <div class="chart-panel-title">▸ PROPORCIÓN (DONA)</div>
+            <canvas id="chartDona"></canvas>
+          </div>
+        </div>
+
+        <div class="ranking-grid">
+          <div class="panel" style="margin-bottom:0">
+            <div class="panel-title" style="font-size:11px;margin-bottom:16px">RANKING DEL PERÍODO</div>
+            <div id="rankingPanel"></div>
+          </div>
+          <div class="panel" style="margin-bottom:0">
+            <div class="panel-title" style="font-size:11px;margin-bottom:16px">RESUMEN HISTÓRICO GLOBAL</div>
+            <div id="resumenHistorico"></div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section id="vista-estadisticas" class="view">
-      <div class="glow-card card" style="margin-bottom:20px;">
-        <div class="toolbar">
-          <label for="filtroDashboard" style="color:var(--muted);font-weight:800;">Ver dashboard:</label>
-          <select id="filtroDashboard">
-            <option value="hoy">Hoy</option>
-            <option value="historico">Histórico acumulado</option>
-          </select>
-          <button class="btn" id="btnResumenDia">Ver resumen del día</button>
-          <button class="btn btn-primary" id="btnDescargarExcelReal2">Descargar Excel real con gráficos</button>
-        </div>
-
-        <div class="dashboard-grid">
-          <div class="metric">
-            <div class="metric-title">Total del panel</div>
-            <div class="metric-value" id="dashTotal">0</div>
-          </div>
-          <div class="metric">
-            <div class="metric-title">Actividad líder</div>
-            <div class="metric-value" id="dashTop" style="font-size:20px;">Sin registros</div>
-          </div>
-          <div class="metric">
-            <div class="metric-title">Categorías activas</div>
-            <div class="metric-value" id="dashActivas">0</div>
-          </div>
-        </div>
-
-        <div class="chart-wrap">
-          <div class="chart-title">Gráfico dinámico estilo dashboard</div>
-          <canvas id="dashboardChart" width="1000" height="340"></canvas>
-        </div>
-      </div>
-
-      <div class="layout-stats">
-        <div class="glow-card card">
-          <h2 class="section-title">Ranking del panel</h2>
-          <div id="rankingDia"></div>
-        </div>
-        <div class="glow-card card">
-          <h2 class="section-title">Resumen histórico</h2>
-          <div id="resumenHistorico"></div>
-        </div>
-      </div>
-
-      <div class="glow-card card" style="margin-top:20px;">
-        <h2 class="section-title">Historial por fecha</h2>
-        <p class="section-sub">Visualización ordenada de los totales guardados por día y actividad.</p>
-        <div class="history-table-wrap">
+    <!-- ===== HISTORIAL ===== -->
+    <section id="v-historial" class="view">
+      <div class="panel">
+        <div class="panel-title">◉ HISTORIAL POR FECHA</div>
+        <div class="panel-sub">Registro detallado de todos los días guardados en el sistema.</div>
+        <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Actividad</th>
-                <th>Total</th>
+                <th>FECHA</th>
+                <th>ACTIVIDAD</th>
+                <th>TOTAL</th>
               </tr>
             </thead>
             <tbody id="tablaHistorial"></tbody>
           </table>
         </div>
       </div>
-
-      <div class="glow-card card" style="margin-top:20px;">
-        <h2 class="section-title">Actividades incluidas</h2>
+      <div class="panel">
+        <div class="panel-title" style="font-size:11px;margin-bottom:14px">ACTIVIDADES DEL SISTEMA</div>
         <div id="chipsActividades"></div>
       </div>
     </section>
 
-    <div class="footer">Archivo HTML listo para usar. Incluye una sola descarga de Excel verdadero (.xlsx) con dashboard y gráficos.</div>
-  </div>
+  </div><!-- /content -->
+  <div class="footer">// OFT-STATS · SISTEMA DE ESTADÍSTICA DIARIA · OFTALMOLOGÍA · DATOS ALMACENADOS LOCALMENTE //</div>
+</div><!-- /app -->
 
-  <script>
-    const actividades = [
-      "Ingreso consultas generales",
-      "Revisar última atención",
-      "Revisar interconsultas",
-      "Revisar y renovar recetas",
-      "Horas becados",
-      "Contestar y llamar pacientes",
-      "Entrega de parches",
-      "Firma consentimientos",
-      "Enviar a computarizar",
-      "Consultas generales",
-      "Indicaciones"
-    ];
+<script>
+// ===== CREDENCIALES =====
+const CREDS = { usuario: "ventanilla", pass: "oftalmo2024" };
 
-    const HISTORIAL_KEY = "sistema_estadistica_historial_v4";
-    const EXCEL_REAL_BASE64 = "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";
+// ===== ACTIVIDADES =====
+const actividades = [
+  "Ingreso consultas generales",
+  "Revisar última atención",
+  "Revisar interconsultas",
+  "Revisar y renovar recetas",
+  "Horas becados",
+  "Contestar y llamar pacientes",
+  "Entrega de parches",
+  "Firma consentimientos",
+  "Enviar a computarizar",
+  "Consultas generales",
+  "Indicaciones"
+];
 
-    function fechaKeyActual() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, "0");
-      const d = String(now.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
-    }
+const HISTORIAL_KEY = "oft_stats_historial_v4";
+let chartBarras = null, chartDona = null;
 
-    function fechaTextoCL(fechaKey) {
-      const [y, m, d] = fechaKey.split("-");
-      return `${d}-${m}-${y}`;
-    }
-
-    function obtenerHistorial() {
-      try {
-        return JSON.parse(localStorage.getItem(HISTORIAL_KEY)) || {};
-      } catch (e) {
-        return {};
-      }
-    }
-
-    function guardarHistorial(historial) {
-      localStorage.setItem(HISTORIAL_KEY, JSON.stringify(historial));
-    }
-
-    function crearDiaVacio() {
-      const dia = {};
-      actividades.forEach(a => dia[a] = 0);
-      return dia;
-    }
-
-    function asegurarDiaActual() {
-      const historial = obtenerHistorial();
-      const hoy = fechaKeyActual();
-      if (!historial[hoy]) historial[hoy] = crearDiaVacio();
-      actividades.forEach(a => {
-        if (typeof historial[hoy][a] !== "number") historial[hoy][a] = 0;
-      });
-      guardarHistorial(historial);
-      return historial;
-    }
-
-    function datosHoy() {
-      const historial = asegurarDiaActual();
-      return historial[fechaKeyActual()];
-    }
-
-    function totalDelDia(obj) {
-      return Object.values(obj).reduce((a, b) => a + b, 0);
-    }
-
-    function actividadTopDelDia(obj) {
-      let top = "Sin registros";
-      let max = 0;
-      Object.entries(obj).forEach(([nombre, valor]) => {
-        if (valor > max) {
-          max = valor;
-          top = nombre;
-        }
-      });
-      return max === 0 ? "Sin registros" : `${top} (${max})`;
-    }
-
-    function actualizarActividad(nombre, delta) {
-      const historial = asegurarDiaActual();
-      const hoy = fechaKeyActual();
-      historial[hoy][nombre] = Math.max(0, (historial[hoy][nombre] || 0) + delta);
-      guardarHistorial(historial);
-      render();
-    }
-
-    function reiniciarDia() {
-      if (!confirm("¿Deseas reiniciar el conteo del día actual?")) return;
-      const historial = asegurarDiaActual();
-      historial[fechaKeyActual()] = crearDiaVacio();
-      guardarHistorial(historial);
-      render();
-    }
-
-    function borrarHistorialCompleto() {
-      if (!confirm("¿Deseas borrar todo el historial guardado del sistema?")) return;
-      localStorage.removeItem(HISTORIAL_KEY);
-      render();
-    }
-
-    function cambiarVista(viewId) {
-      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-      document.getElementById(viewId).classList.add("active");
-      document.querySelector(`.nav-btn[data-view="${viewId}"]`).classList.add("active");
-    }
-
-    function descargarExcelReal() {
-      const mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-      const binary = atob(EXCEL_REAL_BASE64);
-      const len = binary.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "reporte_estadistica_dashboard_unico.xlsx";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
-
-    function renderCabecera() {
-      const historial = asegurarDiaActual();
-      const hoy = fechaKeyActual();
-      const data = historial[hoy];
-      document.getElementById("fechaHoyTexto").textContent = fechaTextoCL(hoy);
-      document.getElementById("totalHoy").textContent = totalDelDia(data);
-      document.getElementById("topActividad").textContent = actividadTopDelDia(data);
-      document.getElementById("cantidadActividades").textContent = actividades.length;
-      document.getElementById("diasGuardados").textContent = Object.keys(historial).length;
-    }
-
-    function renderListaActividades() {
-      const data = datosHoy();
-      const contenedor = document.getElementById("listaActividades");
-      contenedor.innerHTML = "";
-      actividades.forEach(nombre => {
-        const row = document.createElement("div");
-        row.className = "activity";
-        row.innerHTML = `
-          <div>
-            <div class="activity-name"></div>
-            <div class="activity-tag">Registro rápido diario</div>
-          </div>
-          <div class="counter">
-            <span>Hoy</span>
-            <strong>${data[nombre] || 0}</strong>
-          </div>
-          <div class="mini-btns">
-            <button class="mini-btn plus">+1 Auto suma</button>
-            <button class="mini-btn minus">-1</button>
-          </div>
-        `;
-        row.querySelector(".activity-name").textContent = nombre;
-        row.querySelector(".plus").addEventListener("click", () => actualizarActividad(nombre, 1));
-        row.querySelector(".minus").addEventListener("click", () => actualizarActividad(nombre, -1));
-        contenedor.appendChild(row);
-      });
-    }
-
-    function obtenerDatosDashboard() {
-      const filtro = document.getElementById("filtroDashboard").value;
-      const historial = asegurarDiaActual();
-      if (filtro === "hoy") return { titulo: "Hoy", data: { ...historial[fechaKeyActual()] } };
-      const acumulado = crearDiaVacio();
-      Object.values(historial).forEach(dia => {
-        actividades.forEach(act => acumulado[act] += dia[act] || 0);
-      });
-      return { titulo: "Histórico acumulado", data: acumulado };
-    }
-
-    function renderMetricasDashboard(panelData) {
-      document.getElementById("dashTotal").textContent = totalDelDia(panelData);
-      document.getElementById("dashTop").textContent = actividadTopDelDia(panelData);
-      document.getElementById("dashActivas").textContent = Object.values(panelData).filter(v => v > 0).length;
-    }
-
-    function renderRanking() {
-      const { data } = obtenerDatosDashboard();
-      const orden = Object.entries(data).sort((a, b) => b[1] - a[1]);
-      const max = Math.max(...orden.map(x => x[1]), 1);
-      const box = document.getElementById("rankingDia");
-      if (orden.every(x => x[1] === 0)) {
-        box.innerHTML = `<div class="empty">Aún no hay registros para el panel seleccionado.</div>`;
-        return;
-      }
-      box.innerHTML = orden.map(([nombre, valor]) => `
-        <div class="ranking-item">
-          <div class="ranking-top"><span>${nombre}</span><strong>${valor}</strong></div>
-          <div class="bar"><div style="width:${(valor / max) * 100}%"></div></div>
-        </div>
-      `).join("");
-    }
-
-    function renderHistorico() {
-      const historial = obtenerHistorial();
-      const resumenBox = document.getElementById("resumenHistorico");
-      const totales = {};
-      Object.values(historial).forEach(dia => {
-        actividades.forEach(a => totales[a] = (totales[a] || 0) + (dia[a] || 0));
-      });
-      const orden = Object.entries(totales).sort((a, b) => b[1] - a[1]).filter(x => x[1] > 0);
-      if (orden.length === 0) {
-        resumenBox.innerHTML = `<div class="empty">No hay historial acumulado todavía.</div>`;
-      } else {
-        const max = Math.max(...orden.map(o=>o[1]),1);
-        resumenBox.innerHTML = orden.map(([nombre, valor]) => `
-          <div class="ranking-item">
-            <div class="ranking-top"><span>${nombre}</span><strong>${valor}</strong></div>
-            <div class="bar"><div style="width:${(valor / max)*100}%"></div></div>
-          </div>
-        `).join("");
-      }
-      const tbody = document.getElementById("tablaHistorial");
-      const fechas = Object.keys(historial).sort((a, b) => b.localeCompare(a));
-      let rows = "";
-      fechas.forEach(fecha => {
-        actividades.forEach(act => {
-          const valor = historial[fecha][act] || 0;
-          if (valor > 0) {
-            rows += `<tr><td>${fechaTextoCL(fecha)}</td><td>${act}</td><td>${valor}</td></tr>`;
-          }
-        });
-      });
-      tbody.innerHTML = rows || `<tr><td colspan="3" class="empty">No hay datos guardados todavía.</td></tr>`;
-    }
-
-    function renderChips() {
-      document.getElementById("chipsActividades").innerHTML =
-        actividades.map(a => `<span class="chip">${a}</span>`).join("");
-    }
-
-    function mostrarResumen() {
-      const hoy = fechaKeyActual();
-      const data = datosHoy();
-      const texto = actividades.map(a => `• ${a}: ${data[a] || 0}`).join("\n");
-      alert(`Resumen del día ${fechaTextoCL(hoy)}\n\n${texto}\n\nTotal del día: ${totalDelDia(data)}`);
-    }
-
-    function dibujarGraficoDashboard() {
-      const canvas = document.getElementById("dashboardChart");
-      const ctx = canvas.getContext("2d");
-      const { data } = obtenerDatosDashboard();
-      const entries = Object.entries(data).sort((a,b) => b[1] - a[1]);
-      const values = entries.map(e => e[1]);
-      const labels = entries.map(e => e[0]);
-      const W = canvas.width, H = canvas.height;
-      ctx.clearRect(0, 0, W, H);
-      const gradBg = ctx.createLinearGradient(0, 0, 0, H);
-      gradBg.addColorStop(0, "rgba(57,160,255,.06)");
-      gradBg.addColorStop(1, "rgba(98,255,211,.01)");
-      ctx.fillStyle = gradBg; ctx.fillRect(0,0,W,H);
-
-      const margin = { top:25, right:20, bottom:105, left:55 };
-      const chartW = W - margin.left - margin.right;
-      const chartH = H - margin.top - margin.bottom;
-      const max = Math.max(...values, 1);
-
-      ctx.strokeStyle = "rgba(150,190,255,.18)";
-      ctx.lineWidth = 1;
-      for (let i=0;i<=5;i++) {
-        const y = margin.top + (chartH/5)*i;
-        ctx.beginPath(); ctx.moveTo(margin.left,y); ctx.lineTo(margin.left+chartW,y); ctx.stroke();
-        const value = Math.round(max - (max/5)*i);
-        ctx.fillStyle = "#8da9d6"; ctx.font = "12px Segoe UI"; ctx.fillText(value, 10, y+4);
-      }
-
-      const gap = 14;
-      const barW = (chartW - gap*(labels.length-1))/labels.length;
-
-      values.forEach((value,i) => {
-        const x = margin.left + i*(barW+gap);
-        const h = (value/max)*chartH;
-        const y = margin.top + chartH - h;
-        const gradient = ctx.createLinearGradient(0, y, 0, y+h);
-        gradient.addColorStop(0, "#62ffd3");
-        gradient.addColorStop(1, "#39a0ff");
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        const r = 8;
-        ctx.moveTo(x, y+h); ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
-        ctx.lineTo(x+barW-r, y); ctx.quadraticCurveTo(x+barW, y, x+barW, y+r);
-        ctx.lineTo(x+barW, y+h); ctx.closePath(); ctx.fill();
-
-        ctx.fillStyle = "#ecf5ff"; ctx.font = "bold 12px Segoe UI"; ctx.textAlign = "center";
-        ctx.fillText(value, x+barW/2, y-8);
-
-        ctx.save();
-        ctx.translate(x+barW/2, margin.top + chartH + 18);
-        ctx.rotate(-0.55);
-        ctx.fillStyle = "#8da9d6"; ctx.font = "12px Segoe UI";
-        const shortLabel = labels[i].length > 24 ? labels[i].slice(0,24) + "…" : labels[i];
-        ctx.fillText(shortLabel, 0, 0);
-        ctx.restore();
-      });
-      ctx.textAlign = "left";
-    }
-
-    function renderDashboard() {
-      const panel = obtenerDatosDashboard();
-      renderMetricasDashboard(panel.data);
-      renderRanking();
-      dibujarGraficoDashboard();
-    }
-
-    function enlazarEventos() {
-      document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => cambiarVista(btn.dataset.view)));
-      document.getElementById("btnReiniciarDia").addEventListener("click", reiniciarDia);
-      document.getElementById("btnBorrarHistorial").addEventListener("click", borrarHistorialCompleto);
-      document.getElementById("btnResumenDia").addEventListener("click", mostrarResumen);
-      document.getElementById("filtroDashboard").addEventListener("change", renderDashboard);
-      document.getElementById("btnDescargarExcelReal").addEventListener("click", descargarExcelReal);
-      document.getElementById("btnDescargarExcelReal2").addEventListener("click", descargarExcelReal);
-      window.addEventListener("resize", dibujarGraficoDashboard);
-    }
-
-    function render() {
-      asegurarDiaActual();
-      renderCabecera();
-      renderListaActividades();
-      renderDashboard();
-      renderHistorico();
-      renderChips();
-    }
-
-    enlazarEventos();
+// ===== LOGIN =====
+function intentarLogin() {
+  const u = document.getElementById("loginUser").value.trim().toLowerCase();
+  const p = document.getElementById("loginPass").value;
+  const err = document.getElementById("loginError");
+  if (u === CREDS.usuario && p === CREDS.pass) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("app").style.display = "block";
     render();
-  </script>
+  } else {
+    err.style.display = "block";
+    document.getElementById("loginPass").value = "";
+    setTimeout(() => err.style.display = "none", 3000);
+  }
+}
+
+document.getElementById("loginPass").addEventListener("keydown", e => {
+  if (e.key === "Enter") intentarLogin();
+});
+document.getElementById("loginUser").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("loginPass").focus();
+});
+
+function cerrarSesion() {
+  if (!confirm("¿Deseas cerrar sesión?")) return;
+  document.getElementById("app").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("loginUser").value = "";
+  document.getElementById("loginPass").value = "";
+}
+
+// ===== HISTORIAL =====
+function getHistorial() {
+  try { return JSON.parse(localStorage.getItem(HISTORIAL_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveHistorial(h) { localStorage.setItem(HISTORIAL_KEY, JSON.stringify(h)); }
+
+function fechaKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
+function fechaCL(k) { const [y,m,d]=k.split('-'); return `${d}-${m}-${y}`; }
+
+function diaVacio() {
+  const d={};
+  actividades.forEach(a=>d[a]=0);
+  return d;
+}
+function asegurarHoy() {
+  const h=getHistorial(), hoy=fechaKey();
+  if (!h[hoy]) h[hoy]=diaVacio();
+  actividades.forEach(a=>{ if(typeof h[hoy][a]!=='number') h[hoy][a]=0; });
+  saveHistorial(h);
+  return h;
+}
+function datosHoy() { return asegurarHoy()[fechaKey()]; }
+function totalObj(obj) { return Object.values(obj).reduce((a,b)=>a+b,0); }
+function topObj(obj) {
+  let top='—', max=0;
+  Object.entries(obj).forEach(([n,v])=>{ if(v>max){max=v;top=n;} });
+  return max===0?'—':`${top} (${max})`;
+}
+
+// ===== RENDER MAIN =====
+function render() {
+  renderTopbar();
+  renderCabecera();
+  renderLista();
+  renderDashboard();
+  renderHistorial();
+  renderChips();
+}
+
+function renderTopbar() {
+  const now = new Date();
+  document.getElementById("fechaTopbar").textContent =
+    now.toLocaleDateString('es-CL',{weekday:'short',year:'numeric',month:'2-digit',day:'2-digit'}).toUpperCase();
+}
+
+function renderCabecera() {
+  const h=asegurarHoy(), hoy=fechaKey(), d=h[hoy];
+  document.getElementById("totalHoy").textContent=totalObj(d);
+  document.getElementById("topActividad").textContent=topObj(d);
+  document.getElementById("cantActividades").textContent=actividades.length;
+  document.getElementById("diasGuardados").textContent=Object.keys(h).length;
+}
+
+function renderLista() {
+  const d=datosHoy(), c=document.getElementById("listaActividades");
+  c.innerHTML="";
+  actividades.forEach(nombre=>{
+    const row=document.createElement("div");
+    row.className="act-row";
+    row.innerHTML=`
+      <div>
+        <div class="act-name"></div>
+        <div class="act-tag">REGISTRO RÁPIDO DIARIO</div>
+      </div>
+      <div class="counter-box">
+        <span>HOY</span>
+        <strong>${d[nombre]||0}</strong>
+      </div>
+      <div class="act-btns">
+        <button class="act-btn act-plus">+1</button>
+        <button class="act-btn act-minus">−1</button>
+      </div>
+    `;
+    row.querySelector(".act-name").textContent=nombre;
+    row.querySelector(".act-plus").onclick=()=>actualizar(nombre,1);
+    row.querySelector(".act-minus").onclick=()=>actualizar(nombre,-1);
+    c.appendChild(row);
+  });
+}
+
+function actualizar(nombre,delta) {
+  const h=asegurarHoy(), hoy=fechaKey();
+  h[hoy][nombre]=Math.max(0,(h[hoy][nombre]||0)+delta);
+  saveHistorial(h);
+  render();
+}
+
+function reiniciarDia() {
+  if (!confirm("¿Reiniciar conteo del día actual?")) return;
+  const h=asegurarHoy(); h[fechaKey()]=diaVacio(); saveHistorial(h); render();
+}
+function borrarHistorial() {
+  if (!confirm("¿Borrar TODO el historial del sistema?")) return;
+  localStorage.removeItem(HISTORIAL_KEY); render();
+}
+
+// ===== DASHBOARD =====
+function getDashData() {
+  const filtro=document.getElementById("filtroDash").value;
+  const h=asegurarHoy();
+  if (filtro==="hoy") return {...h[fechaKey()]};
+  const acum=diaVacio();
+  Object.values(h).forEach(dia=>actividades.forEach(a=>{ acum[a]+=(dia[a]||0); }));
+  return acum;
+}
+
+function renderDashboard() {
+  const data=getDashData();
+  const total=totalObj(data);
+  const top=topObj(data);
+  const activas=Object.values(data).filter(v=>v>0).length;
+
+  document.getElementById("dashTotal").textContent=total;
+  document.getElementById("dashTop").textContent=top;
+  document.getElementById("dashActivas").textContent=activas;
+
+  renderChartBarras(data);
+  renderChartDona(data);
+  renderRanking(data);
+  renderResumenHistorico();
+}
+
+const COLORS=[
+  'rgba(0,229,255,.8)','rgba(21,101,255,.8)','rgba(0,255,136,.8)','rgba(255,204,0,.8)',
+  'rgba(255,34,68,.8)','rgba(138,43,226,.8)','rgba(255,165,0,.8)','rgba(0,200,200,.8)',
+  'rgba(100,200,100,.8)','rgba(200,100,200,.8)','rgba(255,100,100,.8)'
+];
+
+function renderChartBarras(data) {
+  const labels=actividades;
+  const vals=actividades.map(a=>data[a]||0);
+  if (chartBarras) chartBarras.destroy();
+  const ctx=document.getElementById("chartBarras").getContext("2d");
+  chartBarras=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'Cantidad',
+        data:vals,
+        backgroundColor:COLORS,
+        borderColor:COLORS.map(c=>c.replace('.8','1')),
+        borderWidth:1,
+        borderRadius:4,
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y} registros`}}},
+      scales:{
+        x:{ticks:{color:'#3d6a96',font:{size:10},maxRotation:45},grid:{color:'rgba(0,100,180,.1)'}},
+        y:{ticks:{color:'#3d6a96',font:{size:11}},grid:{color:'rgba(0,100,180,.1)'}}
+      }
+    }
+  });
+}
+
+function renderChartDona(data) {
+  const labels=actividades.filter(a=>(data[a]||0)>0);
+  const vals=labels.map(a=>data[a]);
+  if (chartDona) chartDona.destroy();
+  const ctx=document.getElementById("chartDona").getContext("2d");
+  if (!vals.length) return;
+  chartDona=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels,
+      datasets:[{data:vals,backgroundColor:COLORS,borderColor:'rgba(2,11,24,.8)',borderWidth:2}]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#7aaed8',font:{size:10},padding:8}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed}`}}
+      }
+    }
+  });
+}
+
+function renderRanking(data) {
+  const orden=Object.entries(data).sort((a,b)=>b[1]-a[1]);
+  const max=Math.max(...orden.map(x=>x[1]),1);
+  const box=document.getElementById("rankingPanel");
+  if (orden.every(x=>x[1]===0)) { box.innerHTML=`<div class="empty">SIN DATOS EN EL PERÍODO</div>`; return; }
+  box.innerHTML=orden.map(([n,v])=>`
+    <div class="rank-item">
+      <div class="rank-top"><span>${n}</span><strong>${v}</strong></div>
+      <div class="rank-bar"><div class="rank-fill" style="width:${(v/max)*100}%"></div></div>
+    </div>
+  `).join("");
+}
+
+function renderResumenHistorico() {
+  const h=getHistorial(), totales={};
+  Object.values(h).forEach(dia=>actividades.forEach(a=>{ totales[a]=(totales[a]||0)+(dia[a]||0); }));
+  const orden=Object.entries(totales).sort((a,b)=>b[1]-a[1]).filter(x=>x[1]>0);
+  const max=Math.max(...orden.map(x=>x[1]),1);
+  const box=document.getElementById("resumenHistorico");
+  if (!orden.length) { box.innerHTML=`<div class="empty">SIN HISTORIAL ACUMULADO</div>`; return; }
+  box.innerHTML=orden.map(([n,v])=>`
+    <div class="rank-item">
+      <div class="rank-top"><span>${n}</span><strong>${v}</strong></div>
+      <div class="rank-bar"><div class="rank-fill" style="width:${(v/max)*100}%"></div></div>
+    </div>
+  `).join("");
+}
+
+// ===== HISTORIAL =====
+function renderHistorial() {
+  const h=getHistorial();
+  const fechas=Object.keys(h).sort((a,b)=>b.localeCompare(a));
+  let rows="";
+  fechas.forEach(fecha=>{
+    actividades.forEach(act=>{
+      const v=h[fecha][act]||0;
+      if(v>0) rows+=`<tr><td>${fechaCL(fecha)}</td><td>${act}</td><td class="td-num">${v}</td></tr>`;
+    });
+  });
+  document.getElementById("tablaHistorial").innerHTML=rows||`<tr><td colspan="3" class="empty">SIN HISTORIAL GUARDADO</td></tr>`;
+}
+
+function renderChips() {
+  document.getElementById("chipsActividades").innerHTML=
+    actividades.map(a=>`<span class="chip">${a}</span>`).join("");
+}
+
+// ===== EXPORT XLSX =====
+function exportarXLSX() {
+  const h=getHistorial();
+  const fechas=Object.keys(h).sort();
+  const wb=XLSX.utils.book_new();
+
+  // Hoja 1: Datos completos
+  const ws1Data=[["FECHA",...actividades,"TOTAL DÍA"]];
+  fechas.forEach(fecha=>{
+    const dia=h[fecha];
+    const vals=actividades.map(a=>dia[a]||0);
+    const total=vals.reduce((a,b)=>a+b,0);
+    ws1Data.push([fechaCL(fecha),...vals,total]);
+  });
+  // Fila totales
+  if (fechas.length>0) {
+    const tots=["TOTAL HISTÓRICO",...actividades.map(a=>fechas.reduce((s,f)=>s+(h[f][a]||0),0))];
+    tots.push(tots.slice(1).reduce((a,b)=>a+b,0));
+    ws1Data.push(tots);
+  }
+  const ws1=XLSX.utils.aoa_to_sheet(ws1Data);
+  ws1['!cols']=[{wch:14},...actividades.map(()=>({wch:24})),{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws1,"Historial Completo");
+
+  // Hoja 2: Resumen por actividad
+  const totales={};
+  actividades.forEach(a=>totales[a]=0);
+  Object.values(h).forEach(dia=>actividades.forEach(a=>{ totales[a]+=(dia[a]||0); }));
+  const ws2Data=[["ACTIVIDAD","TOTAL HISTÓRICO","% DEL TOTAL"]];
+  const grandTotal=Object.values(totales).reduce((a,b)=>a+b,0)||1;
+  Object.entries(totales).sort((a,b)=>b[1]-a[1]).forEach(([n,v])=>{
+    ws2Data.push([n,v,((v/grandTotal)*100).toFixed(1)+"%"]);
+  });
+  const ws2=XLSX.utils.aoa_to_sheet(ws2Data);
+  ws2['!cols']=[{wch:30},{wch:18},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws2,"Resumen por Actividad");
+
+  // Hoja 3: Día actual
+  const hoy=datosHoy();
+  const ws3Data=[["ACTIVIDAD","HOY"],...actividades.map(a=>[a,hoy[a]||0])];
+  ws3Data.push(["TOTAL HOY",totalObj(hoy)]);
+  const ws3=XLSX.utils.aoa_to_sheet(ws3Data);
+  ws3['!cols']=[{wch:30},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws3,"Día Actual");
+
+  XLSX.writeFile(wb,`estadistica_oftalmologia_${fechaKey()}.xlsx`);
+}
+
+// ===== NAV =====
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.view).classList.add("active");
+    if (btn.dataset.view==="v-dashboard") renderDashboard();
+    if (btn.dataset.view==="v-historial") { renderHistorial(); renderChips(); }
+  });
+});
+
+// Reloj en tiempo real
+setInterval(()=>{ if(document.getElementById("app").style.display!=="none") renderTopbar(); },60000);
+</script>
 </body>
 </html>
