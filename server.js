@@ -8,32 +8,37 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 const DATA_FILE = path.join(__dirname, 'data.json');
+const INDEX_FILE = path.join(__dirname, 'index.html');
 
-// ── Utilidades de datos ──────────────────────────────────────
+// ── Utilidades ──────────────────────────────────────────────
 function leerDatos() {
   try {
     if (fs.existsSync(DATA_FILE)) {
-      return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      const raw = fs.readFileSync(DATA_FILE, 'utf8');
+      return raw ? JSON.parse(raw) : {};
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('Error leyendo datos:', e.message);
+  }
   return {};
 }
 
 function guardarDatos(datos) {
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(datos), 'utf8');
+    fs.writeFileSync(DATA_FILE, JSON.stringify(datos, null, 2), 'utf8');
+    return true;
   } catch (e) {
     console.error('Error guardando datos:', e.message);
+    return false;
   }
 }
 
 // ── Middleware ───────────────────────────────────────────────
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json({ limit: '5mb' }));
 
-// CORS permisivo para la red local
+// CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -42,40 +47,57 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── API REST ─────────────────────────────────────────────────
-// Obtener todos los datos
+// Servir archivos (IMPORTANTE)
+app.use(express.static(__dirname));
+
+// ── Rutas ────────────────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.sendFile(INDEX_FILE);
+});
+
+// Health (IMPORTANTE PARA EL FRONTEND)
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true });
+});
+
+// Obtener datos
 app.get('/api/datos', (req, res) => {
   res.json(leerDatos());
 });
 
-// Guardar todos los datos (reemplaza completo)
+// Guardar datos
 app.post('/api/datos', (req, res) => {
-  const datos = req.body;
-  guardarDatos(datos);
-  // Broadcast a todos los clientes WebSocket conectados
+  const datos = req.body || {};
+  const ok = guardarDatos(datos);
+
+  if (!ok) {
+    return res.status(500).json({ ok: false });
+  }
+
+  // WebSocket broadcast
   const msg = JSON.stringify({ tipo: 'actualizacion', datos });
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(msg);
     }
   });
+
   res.json({ ok: true });
 });
 
-// Health check para Railway
-app.get('/health', (req, res) => res.json({ status: 'ok', clientes: wss.clients.size }));
-
 // ── WebSocket ────────────────────────────────────────────────
 wss.on('connection', (ws, req) => {
-  console.log('Cliente conectado:', req.socket.remoteAddress);
-  // Enviar datos actuales al nuevo cliente
-  ws.send(JSON.stringify({ tipo: 'inicial', datos: leerDatos() }));
+  console.log('Cliente conectado');
+
+  ws.send(JSON.stringify({
+    tipo: 'inicial',
+    datos: leerDatos()
+  }));
 
   ws.on('close', () => console.log('Cliente desconectado'));
-  ws.on('error', (err) => console.error('WS error:', err.message));
 });
 
 // ── Inicio ───────────────────────────────────────────────────
-server.listen(PORT, () => {
-  console.log(`✅ OFT-STATS Server corriendo en puerto ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
