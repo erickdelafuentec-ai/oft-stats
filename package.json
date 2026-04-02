@@ -1,7 +1,7 @@
 {
   "name": "oft-stats-clinico",
-  "version": "1.1.0",
-  "description": "Sistema OFT-STATS clínico listo para GitHub y Railway",
+  "version": "1.2.0",
+  "description": "Sistema clínico OFT-STATS nivel hospitalario listo para Railway",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

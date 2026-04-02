@@ -10,7 +10,7 @@ const wss = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 8080;
 const DATA_FILE = path.join(__dirname, 'data.json');
-const INDEX_FILE = path.join(__dirname, 'index.html');
+const INDEX_FILE = path.join(__dirname, './index.html');
 
 // ── Utilidades ──────────────────────────────────────────────
 if (!fs.existsSync(DATA_FILE)) {
@@ -60,6 +60,9 @@ app.use(express.static(__dirname));
 
 // ── Rutas ────────────────────────────────────────────────────
 app.get('/', (req, res) => {
+  if (!fs.existsSync(INDEX_FILE)) {
+    return res.status(500).send('Error: index.html no encontrado en el servidor');
+  }
   res.sendFile(INDEX_FILE);
 });
 

@@ -237,7 +237,7 @@ tr:hover td{background:#f5f9ff}
 
   <div class="nav">
     <button class="nav-btn active" data-view="v-registro">📅 Registro</button>
-    <button class="nav-btn" data-view="v-dashboard">📊 Dashboard</button>
+    <button class="nav-btn" data-view="v-dashboard">🏥 Dashboard Clínico</button>
     <button class="nav-btn" data-view="v-historial">📋 Historial</button>
   </div>
 
@@ -265,17 +265,17 @@ tr:hover td{background:#f5f9ff}
           <button class="btn btn-green" onclick="exportarXLSX()">⬇ Exportar Excel</button>
           <button class="btn btn-cyan" onclick="exportarReporte()">📄 Reporte PDF</button>
           <button class="btn btn-yellow" onclick="document.getElementById('fbModal').classList.add('open')">☁ Configurar conexión</button>
-          <button class="btn btn-red" onclick="borrarHistorial()">✕ Borrar todo</button>
+          <button class="btn btn-red" onclick="borrarHistorial()">🛡 Borrar todo (admin)</button>
         </div>
         <div class="activities-grid" id="listaActs"></div>
-        <div class="panel-note">Cada registro se confirma con un destello verde. Los datos se guardan automáticamente en este navegador.</div>
+        <div class="panel-note">Cada registro se confirma con un destello verde. Los datos se guardan localmente y, si Railway está disponible, también se sincronizan en línea.</div>
       </div>
     </section>
 
     <!-- DASHBOARD -->
     <section id="v-dashboard" class="view">
       <div class="panel">
-        <div class="panel-title">Dashboard Analítico</div>
+        <div class="panel-title">Dashboard Clínico</div>
         <div class="toolbar">
           <label style="font-size:13px;font-weight:600;color:var(--at2)">Período:</label>
           <select class="sel" id="filtroDash" onchange="renderDashboard()">
@@ -304,7 +304,7 @@ tr:hover td{background:#f5f9ff}
             <div id="rankingPanel"></div>
           </div>
           <div class="panel" style="margin-bottom:0">
-            <div class="panel-title" style="font-size:14px;margin-bottom:16px">Resumen histórico global</div>
+            <div class="panel-title" style="font-size:14px;margin-bottom:16px">Resumen histórico asistencial</div>
             <div id="resumenHist"></div>
           </div>
         </div>
@@ -336,7 +336,7 @@ tr:hover td{background:#f5f9ff}
     </section>
 
   </div>
-  <div class="footer">OFT-STATS · Sistema de Estadística Diaria · Oftalmología · Conexión automática + respaldo local</div>
+  <div class="footer">OFT-STATS · Sistema Clínico de Estadística y Productividad · Oftalmología · Conexión automática + respaldo local</div>
 </div>
 
 <script>
@@ -542,15 +542,24 @@ function renderLista(){
         <strong>${disp[nombre]||0}</strong>
       </div>
       <div class="act-btns">
-        <button class="act-btn act-plus">+1</button>
-        <button class="act-btn act-minus">−1</button>
+        <button type="button" class="act-btn act-plus" data-act="${nombre}" data-delta="1">+1</button>
+        <button type="button" class="act-btn act-minus" data-act="${nombre}" data-delta="-1">−1</button>
       </div>`;
     row.querySelector('.act-name').textContent=nombre;
-    row.querySelector('.act-plus').onclick=()=>actualizar(nombre,1,row);
-    row.querySelector('.act-minus').onclick=()=>actualizar(nombre,-1,row);
     c.appendChild(row);
   });
 }
+
+
+document.addEventListener('click',(e)=>{
+  const btn=e.target.closest('.act-btn');
+  if(!btn) return;
+  const nombre=btn.getAttribute('data-act');
+  const delta=parseInt(btn.getAttribute('data-delta')||'0',10);
+  if(!nombre || !delta) return;
+  const row=btn.closest('.act-row');
+  actualizar(nombre,delta,row);
+});
 
 function actualizar(nombre,delta,rowEl){
   const h=asegurarHoy(),hoy=fk();
@@ -565,6 +574,10 @@ function reiniciarPeriodo(){
   const h=asegurarHoy();h[fk()]=dV();saveH(h);render();toast('↺ Conteo reiniciado','ok');
 }
 function borrarHistorial(){
+  if(currentRole!=='ADMIN'){
+    toast('Solo admin puede borrar todo el historial','err');
+    return;
+  }
   if(!confirm('¿BORRAR TODO el historial? Esta acción no se puede deshacer.'))return;
   localStorage.removeItem(HKEY);
   if(usingCloud&&wsUrl){
@@ -579,7 +592,8 @@ function borrarHistorial(){
 
 // ===== DASHBOARD =====
 function getDashData(){
-  const f=document.getElementById('filtroDash').value,h=asegurarHoy();
+  const filtro=document.getElementById('filtroDash');
+  const f=(filtro&&filtro.value)||'hoy',h=asegurarHoy();
   if(f==='hoy')return{label:'Hoy',data:{...h[fk()]}};
   if(f==='mes'){const m=mk(),ac=dV();Object.entries(h).forEach(([k,d])=>{if(k.startsWith(m))actividades.forEach(a=>ac[a]+=(d[a]||0));});return{label:'Mes '+m,data:ac};}
   const ac=dV();Object.values(h).forEach(d=>actividades.forEach(a=>ac[a]+=(d[a]||0)));return{label:'Histórico',data:ac};
@@ -664,7 +678,8 @@ function renderResumenHist(){
 
 // ===== HISTORIAL =====
 function renderHistorial(){
-  const h=getH(),f=document.getElementById('filtroHist').value,mes=mk();
+  const filtro=document.getElementById('filtroHist');
+  const h=getH(),f=(filtro&&filtro.value)||'todos',mes=mk();
   let fechas=Object.keys(h).sort((a,b)=>b.localeCompare(a));
   if(f==='mes')fechas=fechas.filter(k=>k.startsWith(mes));
   let rows='';
@@ -786,7 +801,7 @@ function exportarReporte(){
   <button class="bc" onclick="window.close()">✕ Cerrar</button>
 </div>
 <div class="header">
-  <div><h1>👁 OFT-STATS — Reporte Estadístico</h1><div style="color:#9ab0cc;font-size:13px">Sistema de Estadística Diaria — Oftalmología</div></div>
+  <div><h1>👁 OFT-STATS — Reporte Estadístico</h1><div style="color:#9ab0cc;font-size:13px">Sistema Clínico de Estadística y Productividad — Oftalmología</div></div>
   <div style="text-align:right;font-size:12px;color:#9ab0cc;line-height:2">
     <div><b style="color:#1a3a6b">${fnow.toUpperCase()}</b></div>
     <div>USUARIO: VENTANILLA &nbsp;|&nbsp; DÍAS: ${fechas.length} &nbsp;|&nbsp; TOTAL HISTÓRICO: ${gt}</div>
@@ -807,7 +822,7 @@ function exportarReporte(){
 <div class="sec"><h2>Historial por Fecha</h2>
 <table><thead><tr><th>Fecha</th><th>Detalle</th><th style="text-align:right">Total Día</th></tr></thead>
 <tbody>${histRows}</tbody></table></div>
-<div class="foot">OFT-STATS · Sistema de Estadística Diaria · Oftalmología · ${fnow.toUpperCase()}</div>
+<div class="foot">OFT-STATS · Sistema Clínico de Estadística y Productividad · Oftalmología · ${fnow.toUpperCase()}</div>
 </body></html>`;
 
   const blob=new Blob([html],{type:'text/html'});
