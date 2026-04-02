@@ -1,16 +1,13 @@
-# OFT-STATS (Listo para Railway)
+# OFT-STATS Clínico
 
-## Cómo usar
+Proyecto listo para subir a GitHub y desplegar en Railway.
 
-1. Subir este proyecto a GitHub
-2. Ir a Railway → New Project → Deploy from GitHub
-3. Seleccionar este repositorio
-4. Railway lo ejecuta automáticamente
+## Accesos
+- ventanilla / oftalmo2024
+- admin / admin2024
 
-## URL
-Al desplegar, obtendrás una URL tipo:
-https://tu-proyecto.up.railway.app
-
-## Credenciales
-usuario: ventanilla
-clave: oftalmo2024
+## Mejoras incluidas
+- Conexión automática al mismo servidor donde está publicado
+- Respaldo local en navegador
+- Login admin seguro
+- Estilo visual clínico

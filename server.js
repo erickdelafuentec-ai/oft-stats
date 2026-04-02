@@ -13,6 +13,14 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 const INDEX_FILE = path.join(__dirname, 'index.html');
 
 // ── Utilidades ──────────────────────────────────────────────
+if (!fs.existsSync(DATA_FILE)) {
+  try {
+    fs.writeFileSync(DATA_FILE, '{}', 'utf8');
+  } catch (e) {
+    console.error('No se pudo crear data.json inicial:', e.message);
+  }
+}
+
 function leerDatos() {
   try {
     if (fs.existsSync(DATA_FILE)) {
@@ -57,7 +65,7 @@ app.get('/', (req, res) => {
 
 // Health (IMPORTANTE PARA EL FRONTEND)
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, service: 'oft-stats', timestamp: new Date().toISOString() });
 });
 
 // Obtener datos
