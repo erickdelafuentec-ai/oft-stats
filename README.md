@@ -1,6 +1,10 @@
-# OFT-STATS Clínico Pro
+# OFT-STATS Estable
 
-Proyecto listo para GitHub + Railway.
+Versión corregida para:
+- evitar errores de memoria por sincronización infinita
+- corregir la auto-suma
+- acceso admin y ventanilla
+- despliegue directo en GitHub + Railway
 
 ## Accesos
 - ventanilla / oftalmo2024
@@ -13,13 +17,7 @@ Proyecto listo para GitHub + Railway.
 - data.json
 
 ## Despliegue
-1. Sube estos archivos a GitHub
+1. Sube todo a GitHub
 2. En Railway elige Deploy from GitHub
-3. Abre la URL pública y entra al sistema
-
-## Mejoras incluidas
-- conexión automática al mismo servidor
-- login admin y ventanilla
-- dashboard clínico
-- auto-suma corregida con botones robustos
-- borrado total restringido a admin
+3. Selecciona el repo
+4. Espera a que quede en línea

@@ -18,24 +18,24 @@
   --as:0 2px 12px rgba(21,60,100,.08);--as2:0 4px 20px rgba(21,60,100,.13);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(180deg,#f7fbff 0%,#eef5fb 100%);color:var(--at);min-height:100vh;overflow-x:hidden}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--abg);color:var(--at);min-height:100vh;overflow-x:hidden}
 
 /* LOGIN */
-#loginScreen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef7ff 0%,#dfeefb 50%,#f7fbff 100%)}
+#loginScreen{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#041830 0%,#010a14 100%)}
 .login-box{width:420px;position:relative}
-.lc{position:absolute;width:20px;height:20px;border-color:#7fb8e7;border-style:solid}
+.lc{position:absolute;width:20px;height:20px;border-color:var(--cyan);border-style:solid}
 .lc.tl{top:0;left:0;border-width:2px 0 0 2px}.lc.tr{top:0;right:0;border-width:2px 2px 0 0}
 .lc.bl{bottom:0;left:0;border-width:0 0 2px 2px}.lc.br{bottom:0;right:0;border-width:0 2px 2px 0}
-.login-inner{background:rgba(255,255,255,.97);border:1px solid #cfe0f1;padding:44px 40px;border-radius:18px;box-shadow:0 18px 60px rgba(35,86,140,.14)}
+.login-inner{background:rgba(4,15,32,.95);border:1px solid #0d4f9a;padding:44px 40px}
 .login-logo{text-align:center;margin-bottom:32px}
 .login-logo .eye{font-size:48px;display:block;margin-bottom:12px;filter:drop-shadow(0 0 12px var(--cyan))}
-.login-logo h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:#0f5ea8;letter-spacing:4px}
-.login-logo p{font-size:13px;color:#5c7f9f;letter-spacing:2px;margin-top:6px;font-family:'Share Tech Mono',monospace}
+.login-logo h1{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--cyan);text-shadow:var(--glow-cyan);letter-spacing:4px}
+.login-logo p{font-size:13px;color:#3d6a96;letter-spacing:2px;margin-top:6px;font-family:'Share Tech Mono',monospace}
 .lf{margin-bottom:20px}
-.lf label{display:block;font-size:11px;letter-spacing:3px;color:#5f7e9d;margin-bottom:8px;font-family:'Share Tech Mono',monospace}
-.lf input{width:100%;background:#f7fbff;border:1px solid #bcd2e7;border-radius:10px;padding:14px 16px;font-family:'Share Tech Mono',monospace;font-size:15px;color:#1f4f7d;outline:none;transition:.2s}
-.lf input:focus{border-color:#4fa3e3;box-shadow:0 0 0 4px rgba(79,163,227,.12)}
-.login-btn{width:100%;background:linear-gradient(135deg,#1565c0,#4da3dc);border:none;border-radius:12px;padding:16px;font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#fff;letter-spacing:3px;cursor:pointer;transition:.2s;margin-top:8px;box-shadow:0 10px 24px rgba(21,101,192,.22)}
+.lf label{display:block;font-size:11px;letter-spacing:3px;color:#7aaed8;margin-bottom:8px;font-family:'Share Tech Mono',monospace}
+.lf input{width:100%;background:rgba(0,100,180,.08);border:1px solid #0d4f9a;border-radius:4px;padding:14px 16px;font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--cyan);outline:none;transition:.2s}
+.lf input:focus{border-color:var(--cyan);box-shadow:var(--glow-cyan)}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--blue),#00b4cc);border:none;border-radius:4px;padding:16px;font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#fff;letter-spacing:3px;cursor:pointer;transition:.2s;margin-top:8px}
 .login-btn:hover{box-shadow:var(--glow-blue);transform:translateY(-2px)}
 .login-err{background:rgba(255,34,68,.1);border:1px solid var(--red);border-radius:4px;padding:10px 14px;font-size:13px;color:var(--red);margin-top:16px;display:none;text-align:center;font-family:'Share Tech Mono',monospace}
 .login-status{text-align:center;margin-top:20px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#3d6a96;letter-spacing:2px}
@@ -52,7 +52,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(180deg,#
 #app{display:none;min-height:100vh}
 
 /* TOPBAR */
-.topbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-bottom:1px solid #d8e6f2;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:66px;box-shadow:0 8px 24px rgba(21,60,100,.08)}
+.topbar{position:sticky;top:0;z-index:100;background:#fff;border-bottom:3px solid var(--ab);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:62px;box-shadow:0 2px 10px rgba(21,60,100,.08)}
 .logo-text{font-size:18px;font-weight:700;color:var(--ab);letter-spacing:.3px}
 .logo-sub{font-size:11px;color:var(--at3);margin-top:1px}
 .topbar-right{display:flex;align-items:center;gap:14px}
@@ -79,7 +79,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(180deg,#
 
 /* STAT CARDS */
 .stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.stat-card{background:linear-gradient(180deg,#ffffff 0%,#f9fcff 100%);border:1px solid #d9e7f2;border-radius:18px;padding:22px;position:relative;overflow:hidden;transition:.2s;box-shadow:0 10px 26px rgba(21,60,100,.06)}
+.stat-card{background:#fff;border:1px solid var(--abd);border-radius:10px;padding:22px;position:relative;overflow:hidden;transition:.2s;box-shadow:var(--as)}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ab)}
 .stat-card:hover{box-shadow:var(--as2);transform:translateY(-2px)}
 .sc-label{font-size:11px;font-weight:600;letter-spacing:.8px;color:var(--at3);margin-bottom:10px;text-transform:uppercase}
@@ -88,7 +88,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(180deg,#
 .sc-icon{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:40px;opacity:.05}
 
 /* PANEL */
-.panel{background:#fff;border:1px solid #d9e7f2;border-radius:18px;padding:24px;margin-bottom:20px;box-shadow:0 10px 28px rgba(21,60,100,.07)}
+.panel{background:#fff;border:1px solid var(--abd);border-radius:10px;padding:24px;margin-bottom:20px;box-shadow:var(--as)}
 .panel-title{font-size:16px;font-weight:700;color:var(--ab);margin-bottom:6px}
 .panel-sub{font-size:13px;color:var(--at3);margin-bottom:20px}
 
@@ -127,12 +127,12 @@ select.sel:focus{border-color:var(--ac)}
 
 /* DASHBOARD */
 .dash-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
-.dash-metric{background:linear-gradient(135deg,#ffffff 0%,#f7fbff 100%);border:1px solid #dce8f3;border-radius:18px;padding:20px;box-shadow:0 10px 24px rgba(21,60,100,.07);border-left:5px solid #2c7cc9}
+.dash-metric{background:#fff;border:1px solid var(--abd);border-radius:10px;padding:20px;box-shadow:var(--as);border-left:4px solid var(--ab)}
 .dm-title{font-size:11px;font-weight:600;color:var(--at3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
 .dm-value{font-size:34px;font-weight:700;color:var(--ab)}
 
 /* CHART */
-.chart-panel{background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);border:1px solid #d9e7f2;border-radius:18px;padding:28px;margin-bottom:20px;box-shadow:0 12px 28px rgba(21,60,100,.08)}
+.chart-panel{background:#fff;border:1px solid var(--abd);border-radius:10px;padding:28px;margin-bottom:20px;box-shadow:var(--as2)}
 .chart-panel-title{font-size:14px;font-weight:700;color:var(--ab);margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #e3eaf5;text-align:center}
 #chartCanvas{width:100%;display:block}
 
@@ -174,7 +174,7 @@ tr:hover td{background:#f5f9ff}
 .chip{display:inline-block;padding:5px 12px;background:#e8f0fe;border:1px solid #b3c8f0;border-radius:20px;font-size:12px;font-weight:500;color:var(--ab);margin:3px}
 .panel-note{background:#f0f7ff;border:1px solid #b3d4ea;border-radius:6px;padding:12px 16px;font-size:13px;color:var(--at2);margin-top:16px;line-height:1.5}
 .empty{text-align:center;padding:30px;font-size:13px;color:var(--at3)}
-.footer{padding:16px 28px;border-top:1px solid #dce8f3;font-size:12px;color:var(--at3);text-align:center;background:#fff}
+.footer{padding:16px 28px;border-top:1px solid var(--abd);font-size:12px;color:var(--at3);text-align:center;background:#fff}
 
 @media(max-width:1100px){.stat-cards{grid-template-columns:repeat(2,1fr)}.ranking-grid{grid-template-columns:1fr}}
 @media(max-width:700px){.stat-cards{grid-template-columns:1fr}.act-row{grid-template-columns:1fr}.content{padding:16px}}
@@ -197,8 +197,7 @@ tr:hover td{background:#f5f9ff}
       <div class="lf"><label>CONTRASEÑA</label><input type="password" id="loginPass" placeholder="••••••••"/></div>
       <button class="login-btn" onclick="intentarLogin()">ACCEDER AL SISTEMA</button>
       <div class="login-err" id="loginError">// ACCESO DENEGADO — CREDENCIALES INVÁLIDAS //</div>
-      <div class="login-status"><span class="sdot"></span>SISTEMA EN LÍNEA · ACCESO SEGURO</div>
-      <div style="margin-top:12px;text-align:center;font-size:11px;color:#6b89a8">Accesos: <b>ventanilla</b> y <b>admin</b></div>
+      <div class="login-status"><span class="sdot"></span>SISTEMA EN LÍNEA · SEGURO</div>
     </div>
   </div>
 </div>
@@ -206,14 +205,14 @@ tr:hover td{background:#f5f9ff}
 <!-- RAILWAY MODAL -->
 <div id="fbModal">
   <div class="fb-box">
-    <h2>☁ Configuración de conexión</h2>
-    <p>El sistema intentará conectarse automáticamente al mismo servidor donde está publicado. Aquí puedes cambiar la URL manualmente si alguna vez lo necesitas.</p>
+    <h2>☁ Conectar con Servidor</h2>
+    <p>Ingresa la URL de tu servidor Railway para sincronizar datos entre todos los computadores en tiempo real. Si prefieres usar solo este equipo, elige "Solo Local".</p>
     <div class="fb-field"><label>URL del Servidor Railway</label><input id="fbUrl" placeholder="https://oft-stats-production.up.railway.app"/></div>
     <div class="fb-actions">
       <button class="btn btn-green" onclick="conectarServidor()">☁ Conectar</button>
       <button class="btn btn-cyan" onclick="usarLocal()">💾 Solo Local</button>
     </div>
-    <div class="panel-note">Normalmente no necesitas escribir nada aquí. Solo úsalo si deseas conectar el sistema a otra URL de Railway.</div>
+    <div class="panel-note">La URL la obtienes desde <strong style="color:var(--ab)">railway.app</strong> después de desplegar el servidor. Termina en <strong style="color:var(--ab)">.up.railway.app</strong></div>
   </div>
 </div>
 
@@ -225,19 +224,19 @@ tr:hover td{background:#f5f9ff}
   <div class="topbar">
     <div>
       <div class="logo-text">👁 OFT-STATS — Estadística Oftalmología</div>
-      <div class="logo-sub">Sistema Clínico de Registro y Estadística</div>
+      <div class="logo-sub">Sistema Clínico de Registro Diario</div>
     </div>
     <div class="topbar-right">
       <div id="syncBadge" class="sync-badge local"><span class="sync-dot"></span>LOCAL</div>
       <div class="topbar-date" id="fechaTopbar"></div>
-      <div class="user-badge" id="userBadge">USUARIO</div>
+      <div class="user-badge">VENTANILLA</div>
       <button class="btn-logout" onclick="cerrarSesion()">⏻ SALIR</button>
     </div>
   </div>
 
   <div class="nav">
     <button class="nav-btn active" data-view="v-registro">📅 Registro</button>
-    <button class="nav-btn" data-view="v-dashboard">🏥 Dashboard Clínico</button>
+    <button class="nav-btn" data-view="v-dashboard">📊 Dashboard</button>
     <button class="nav-btn" data-view="v-historial">📋 Historial</button>
   </div>
 
@@ -264,18 +263,18 @@ tr:hover td{background:#f5f9ff}
           <button class="btn btn-cyan" onclick="reiniciarPeriodo()">↺ Reiniciar</button>
           <button class="btn btn-green" onclick="exportarXLSX()">⬇ Exportar Excel</button>
           <button class="btn btn-cyan" onclick="exportarReporte()">📄 Reporte PDF</button>
-          <button class="btn btn-yellow" onclick="document.getElementById('fbModal').classList.add('open')">☁ Configurar conexión</button>
-          <button class="btn btn-red" onclick="borrarHistorial()">🛡 Borrar todo (admin)</button>
+          <button class="btn btn-yellow" onclick="document.getElementById('fbModal').classList.add('open')">☁ Configurar Nube</button>
+          <button class="btn btn-red" onclick="borrarHistorial()">✕ Borrar todo</button>
         </div>
         <div class="activities-grid" id="listaActs"></div>
-        <div class="panel-note">Cada registro se confirma con un destello verde. Los datos se guardan localmente y, si Railway está disponible, también se sincronizan en línea.</div>
+        <div class="panel-note">Cada registro se confirma con un destello verde. Los datos se guardan automáticamente en este navegador.</div>
       </div>
     </section>
 
     <!-- DASHBOARD -->
     <section id="v-dashboard" class="view">
       <div class="panel">
-        <div class="panel-title">Dashboard Clínico</div>
+        <div class="panel-title">Dashboard Analítico</div>
         <div class="toolbar">
           <label style="font-size:13px;font-weight:600;color:var(--at2)">Período:</label>
           <select class="sel" id="filtroDash" onchange="renderDashboard()">
@@ -304,7 +303,7 @@ tr:hover td{background:#f5f9ff}
             <div id="rankingPanel"></div>
           </div>
           <div class="panel" style="margin-bottom:0">
-            <div class="panel-title" style="font-size:14px;margin-bottom:16px">Resumen histórico asistencial</div>
+            <div class="panel-title" style="font-size:14px;margin-bottom:16px">Resumen histórico global</div>
             <div id="resumenHist"></div>
           </div>
         </div>
@@ -336,16 +335,13 @@ tr:hover td{background:#f5f9ff}
     </section>
 
   </div>
-  <div class="footer">OFT-STATS · Sistema Clínico de Estadística y Productividad · Oftalmología · Conexión automática + respaldo local</div>
+  <div class="footer">OFT-STATS · Sistema de Estadística Diaria · Oftalmología · Sincronización local y nube</div>
 </div>
 
 <script>
 // ===== CONFIG =====
-const USERS={
-  ventanilla:{pass:"oftalmo2024",role:"VENTANILLA"},
-  admin:{pass:"admin2024",role:"ADMINISTRADOR"}
-};
-let currentUser='', currentRole='';
+const CREDS={usuario:"ventanilla",pass:"oftalmo2024"};
+const ADMIN_CREDS={usuario:"admin",pass:"admin2024"};
 const actividades=[
   "Ingreso consultas generales","Revisar última atención","Revisar interconsultas",
   "Revisar y renovar recetas","Horas becados","Contestar y llamar pacientes",
@@ -354,6 +350,9 @@ const actividades=[
 ];
 const HKEY="oft_stats_v5", SRV_KEY="oft_server_url";
 let currentPeriod='diario', usingCloud=false, ws=null, wsUrl='', wsReintento=null;
+let suppressRemoteSave=false;
+let lastSavedJSON='';
+let currentUserRole='ventanilla';
 
 // ===== TOAST =====
 function toast(msg,type,ms=2000){
@@ -366,27 +365,33 @@ function toast(msg,type,ms=2000){
 function intentarLogin(){
   const u=document.getElementById('loginUser').value.trim().toLowerCase();
   const p=document.getElementById('loginPass').value;
-  const user=USERS[u];
-  if(user && p===user.pass){
-    currentUser=u;
-    currentRole=user.role;
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('app').style.display='block';
-    document.getElementById('userBadge').textContent=currentRole;
-    autoConnectServer();
-    render();
+  if(u===CREDS.usuario && p===CREDS.pass){
+    currentUserRole='ventanilla';
+  } else if(u===ADMIN_CREDS.usuario && p===ADMIN_CREDS.pass){
+    currentUserRole='admin';
   } else {
     const e=document.getElementById('loginError');
     e.style.display='block'; document.getElementById('loginPass').value='';
     setTimeout(()=>e.style.display='none',3000);
+    return;
   }
+
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.querySelector('.user-badge').textContent = currentUserRole.toUpperCase();
+  const srv=localStorage.getItem(SRV_KEY);
+  if(srv){reconectarWS(srv);}
+  else{
+    const autoUrl=window.location.origin;
+    localStorage.setItem(SRV_KEY, autoUrl);
+    reconectarWS(autoUrl);
+  }
+  render();
 }
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')intentarLogin()});
 document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPass').focus()});
 function cerrarSesion(){
   if(!confirm('¿Deseas cerrar sesión?'))return;
-  currentUser=''; currentRole='';
-  document.getElementById('userBadge').textContent='USUARIO';
   document.getElementById('app').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
   ['loginUser','loginPass'].forEach(id=>document.getElementById(id).value='');
@@ -395,33 +400,10 @@ function cerrarSesion(){
 // ===== RAILWAY WEBSOCKET =====
 function usarLocal(){
   document.getElementById('fbModal').classList.remove('open');
+  usingCloud=false;
+  if(ws){ try{ ws.close(); }catch(e){} }
   setSyncBadge('local');
   toast('💾 Modo local activado','ok');
-}
-
-function autoConnectServer(){
-  const currentOrigin=window.location.origin;
-  if(currentOrigin && /^https?:\/\//.test(currentOrigin)){
-    document.getElementById('fbUrl').value=currentOrigin;
-    localStorage.setItem(SRV_KEY,currentOrigin);
-    fetch(currentOrigin+'/api/health')
-      .then(r=>{ if(!r.ok) throw new Error('health'); return r.json(); })
-      .then(()=>reconectarWS(currentOrigin))
-      .catch(()=> {
-        const saved=localStorage.getItem(SRV_KEY);
-        if(saved && saved!==currentOrigin){
-          document.getElementById('fbUrl').value=saved;
-          reconectarWS(saved);
-        } else {
-          setSyncBadge('local');
-          toast('💾 Modo local activado','ok');
-        }
-      });
-  } else {
-    const saved=localStorage.getItem(SRV_KEY);
-    if(saved){ document.getElementById('fbUrl').value=saved; reconectarWS(saved); }
-    else { setSyncBadge('local'); }
-  }
 }
 function conectarServidor(){
   let url=document.getElementById('fbUrl').value.trim();
@@ -450,9 +432,16 @@ function intentarConexionWS(){
     ws.onmessage=(evt)=>{
       try{
         const msg=JSON.parse(evt.data);
-        if((msg.tipo==='inicial'||msg.tipo==='actualizacion')&&msg.datos){
-          localStorage.setItem(HKEY,JSON.stringify(msg.datos));
-          render();
+        if((msg.tipo==='inicial'||msg.tipo==='actualizacion') && msg.datos){
+          const incoming = JSON.stringify(msg.datos||{});
+          const current = localStorage.getItem(HKEY) || '{}';
+          if(incoming !== current){
+            suppressRemoteSave = true;
+            localStorage.setItem(HKEY, incoming);
+            lastSavedJSON = incoming;
+            render();
+            suppressRemoteSave = false;
+          }
         }
       }catch(e){}
     };
@@ -476,13 +465,23 @@ function setSyncBadge(m){
 // ===== STORAGE =====
 function getH(){try{return JSON.parse(localStorage.getItem(HKEY))||{};}catch{return{};}}
 function saveH(h){
-  localStorage.setItem(HKEY,JSON.stringify(h));
+  const payload = JSON.stringify(h||{});
+  if(payload === lastSavedJSON) return;
+  localStorage.setItem(HKEY, payload);
+  lastSavedJSON = payload;
+
+  if(suppressRemoteSave) return;
+
   if(usingCloud&&wsUrl){
     let httpUrl;
     if(wsUrl.startsWith('wss://')) httpUrl='https://'+wsUrl.slice(6);
     else if(wsUrl.startsWith('ws://')) httpUrl='http://'+wsUrl.slice(5);
     else httpUrl=wsUrl;
-    fetch(httpUrl+'/api/datos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(h)}).catch(()=>{});
+    fetch(httpUrl+'/api/datos',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:payload
+    }).catch(()=>{});
   }
 }
 function fk(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
@@ -491,7 +490,22 @@ function fCL(k){const[y,m,d]=k.split('-');return`${d}-${m}-${y}`;}
 function dV(){const d={};actividades.forEach(a=>d[a]=0);return d;}
 function totObj(o){return Object.values(o).reduce((a,b)=>a+b,0);}
 function topObj(o){let t='—',mx=0;Object.entries(o).forEach(([n,v])=>{if(v>mx){mx=v;t=n;}});return mx===0?'—':`${t} (${mx})`;}
-function asegurarHoy(){const h=getH(),hoy=fk();if(!h[hoy])h[hoy]=dV();actividades.forEach(a=>{if(typeof h[hoy][a]!=='number')h[hoy][a]=0;});saveH(h);return h;}
+function asegurarHoy(){
+  const h=getH(),hoy=fk();
+  let cambiado=false;
+  if(!h[hoy]){
+    h[hoy]=dV();
+    cambiado=true;
+  }
+  actividades.forEach(a=>{
+    if(typeof h[hoy][a]!=='number'){
+      h[hoy][a]=0;
+      cambiado=true;
+    }
+  });
+  if(cambiado) saveH(h);
+  return h;
+}
 function datosHoy(){return asegurarHoy()[fk()];}
 function datosMes(){const h=getH(),mes=mk(),ac=dV();Object.entries(h).forEach(([f,d])=>{if(f.startsWith(mes))actividades.forEach(a=>ac[a]+=(d[a]||0));});return ac;}
 
@@ -542,24 +556,15 @@ function renderLista(){
         <strong>${disp[nombre]||0}</strong>
       </div>
       <div class="act-btns">
-        <button type="button" class="act-btn act-plus" data-act="${nombre}" data-delta="1">+1</button>
-        <button type="button" class="act-btn act-minus" data-act="${nombre}" data-delta="-1">−1</button>
+        <button type="button" class="act-btn act-plus">+1</button>
+        <button type="button" class="act-btn act-minus">−1</button>
       </div>`;
     row.querySelector('.act-name').textContent=nombre;
+    row.querySelector('.act-plus').onclick=()=>actualizar(nombre,1,row);
+    row.querySelector('.act-minus').onclick=()=>actualizar(nombre,-1,row);
     c.appendChild(row);
   });
 }
-
-
-document.addEventListener('click',(e)=>{
-  const btn=e.target.closest('.act-btn');
-  if(!btn) return;
-  const nombre=btn.getAttribute('data-act');
-  const delta=parseInt(btn.getAttribute('data-delta')||'0',10);
-  if(!nombre || !delta) return;
-  const row=btn.closest('.act-row');
-  actualizar(nombre,delta,row);
-});
 
 function actualizar(nombre,delta,rowEl){
   const h=asegurarHoy(),hoy=fk();
@@ -574,7 +579,7 @@ function reiniciarPeriodo(){
   const h=asegurarHoy();h[fk()]=dV();saveH(h);render();toast('↺ Conteo reiniciado','ok');
 }
 function borrarHistorial(){
-  if(currentRole!=='ADMIN'){
+  if(currentUserRole!=='admin'){
     toast('Solo admin puede borrar todo el historial','err');
     return;
   }
@@ -592,8 +597,7 @@ function borrarHistorial(){
 
 // ===== DASHBOARD =====
 function getDashData(){
-  const filtro=document.getElementById('filtroDash');
-  const f=(filtro&&filtro.value)||'hoy',h=asegurarHoy();
+  const f=document.getElementById('filtroDash').value,h=asegurarHoy();
   if(f==='hoy')return{label:'Hoy',data:{...h[fk()]}};
   if(f==='mes'){const m=mk(),ac=dV();Object.entries(h).forEach(([k,d])=>{if(k.startsWith(m))actividades.forEach(a=>ac[a]+=(d[a]||0));});return{label:'Mes '+m,data:ac};}
   const ac=dV();Object.values(h).forEach(d=>actividades.forEach(a=>ac[a]+=(d[a]||0)));return{label:'Histórico',data:ac};
@@ -678,8 +682,7 @@ function renderResumenHist(){
 
 // ===== HISTORIAL =====
 function renderHistorial(){
-  const filtro=document.getElementById('filtroHist');
-  const h=getH(),f=(filtro&&filtro.value)||'todos',mes=mk();
+  const h=getH(),f=document.getElementById('filtroHist').value,mes=mk();
   let fechas=Object.keys(h).sort((a,b)=>b.localeCompare(a));
   if(f==='mes')fechas=fechas.filter(k=>k.startsWith(mes));
   let rows='';
@@ -801,7 +804,7 @@ function exportarReporte(){
   <button class="bc" onclick="window.close()">✕ Cerrar</button>
 </div>
 <div class="header">
-  <div><h1>👁 OFT-STATS — Reporte Estadístico</h1><div style="color:#9ab0cc;font-size:13px">Sistema Clínico de Estadística y Productividad — Oftalmología</div></div>
+  <div><h1>👁 OFT-STATS — Reporte Estadístico</h1><div style="color:#9ab0cc;font-size:13px">Sistema de Estadística Diaria — Oftalmología</div></div>
   <div style="text-align:right;font-size:12px;color:#9ab0cc;line-height:2">
     <div><b style="color:#1a3a6b">${fnow.toUpperCase()}</b></div>
     <div>USUARIO: VENTANILLA &nbsp;|&nbsp; DÍAS: ${fechas.length} &nbsp;|&nbsp; TOTAL HISTÓRICO: ${gt}</div>
@@ -822,7 +825,7 @@ function exportarReporte(){
 <div class="sec"><h2>Historial por Fecha</h2>
 <table><thead><tr><th>Fecha</th><th>Detalle</th><th style="text-align:right">Total Día</th></tr></thead>
 <tbody>${histRows}</tbody></table></div>
-<div class="foot">OFT-STATS · Sistema Clínico de Estadística y Productividad · Oftalmología · ${fnow.toUpperCase()}</div>
+<div class="foot">OFT-STATS · Sistema de Estadística Diaria · Oftalmología · ${fnow.toUpperCase()}</div>
 </body></html>`;
 
   const blob=new Blob([html],{type:'text/html'});
@@ -832,6 +835,8 @@ function exportarReporte(){
   setTimeout(()=>URL.revokeObjectURL(url),5000);
   toast('📄 Reporte generado — Ctrl+P para PDF','ok',3500);
 }
+
+lastSavedJSON = localStorage.getItem(HKEY) || '{}';
 
 // ===== NAV =====
 document.querySelectorAll('.nav-btn').forEach(btn=>{

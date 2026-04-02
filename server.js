@@ -10,16 +10,7 @@ const wss = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 8080;
 const DATA_FILE = path.join(__dirname, 'data.json');
-const INDEX_FILE = path.join(__dirname, './index.html');
-
-// ── Utilidades ──────────────────────────────────────────────
-if (!fs.existsSync(DATA_FILE)) {
-  try {
-    fs.writeFileSync(DATA_FILE, '{}', 'utf8');
-  } catch (e) {
-    console.error('No se pudo crear data.json inicial:', e.message);
-  }
-}
+const INDEX_FILE = path.join(__dirname, 'index.html');
 
 function leerDatos() {
   try {
@@ -43,10 +34,8 @@ function guardarDatos(datos) {
   }
 }
 
-// ── Middleware ───────────────────────────────────────────────
 app.use(express.json({ limit: '5mb' }));
 
-// CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -55,28 +44,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// Servir archivos (IMPORTANTE)
 app.use(express.static(__dirname));
 
-// ── Rutas ────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   if (!fs.existsSync(INDEX_FILE)) {
-    return res.status(500).send('Error: index.html no encontrado en el servidor');
+    return res.status(500).send('Error: index.html no encontrado');
   }
   res.sendFile(INDEX_FILE);
 });
 
-// Health (IMPORTANTE PARA EL FRONTEND)
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, service: 'oft-stats', timestamp: new Date().toISOString() });
+  res.json({ ok: true, service: 'oft-stats-clinico' });
 });
 
-// Obtener datos
 app.get('/api/datos', (req, res) => {
   res.json(leerDatos());
 });
 
-// Guardar datos
 app.post('/api/datos', (req, res) => {
   const datos = req.body || {};
   const ok = guardarDatos(datos);
@@ -85,7 +69,6 @@ app.post('/api/datos', (req, res) => {
     return res.status(500).json({ ok: false });
   }
 
-  // WebSocket broadcast
   const msg = JSON.stringify({ tipo: 'actualizacion', datos });
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
@@ -96,8 +79,7 @@ app.post('/api/datos', (req, res) => {
   res.json({ ok: true });
 });
 
-// ── WebSocket ────────────────────────────────────────────────
-wss.on('connection', (ws, req) => {
+wss.on('connection', (ws) => {
   console.log('Cliente conectado');
 
   ws.send(JSON.stringify({
@@ -106,9 +88,9 @@ wss.on('connection', (ws, req) => {
   }));
 
   ws.on('close', () => console.log('Cliente desconectado'));
+  ws.on('error', () => {});
 });
 
-// ── Inicio ───────────────────────────────────────────────────
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
