@@ -176,8 +176,39 @@ tr:hover td{background:#f5f9ff}
 .empty{text-align:center;padding:30px;font-size:13px;color:var(--at3)}
 .footer{padding:16px 28px;border-top:1px solid var(--abd);font-size:12px;color:var(--at3);text-align:center;background:#fff}
 
+/* WEEK DAY SELECTOR */
+.week-selector{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:14px 16px;background:#f5f8fb;border:1px solid var(--abd);border-radius:8px}
+.week-selector-label{font-size:11px;font-weight:700;color:var(--at3);letter-spacing:1px;text-transform:uppercase;margin-right:4px;white-space:nowrap}
+.day-btn{border:1px solid var(--abd2);background:#fff;color:var(--at2);border-radius:6px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap}
+.day-btn:hover{border-color:var(--ab);color:var(--ab);background:#e8f0fe}
+.day-btn.active{background:var(--ab);color:#fff;border-color:var(--ab2)}
+.day-btn.today{border-color:#2e7d32;color:#2e7d32}
+.day-btn.today.active{background:#2e7d32;color:#fff;border-color:#1b5e20}
+.day-btn.no-data{opacity:.45}
+.week-nav{display:flex;align-items:center;gap:6px;margin-left:auto}
+.week-nav button{border:1px solid var(--abd2);background:#fff;color:var(--at2);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;transition:.15s}
+.week-nav button:hover{border-color:var(--ab);color:var(--ab)}
+.week-nav span{font-size:12px;font-weight:600;color:var(--at2);white-space:nowrap}
+/* EDIT DAY MODAL */
+#editDayModal{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center}
+#editDayModal.open{display:flex}
+.ed-box{background:#fff;border-radius:12px;padding:0;max-width:560px;width:100%;margin:20px;box-shadow:0 8px 40px rgba(0,0,0,.2);overflow:hidden;max-height:90vh;display:flex;flex-direction:column}
+.ed-header{background:var(--ab);color:#fff;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.ed-header h2{font-size:16px;font-weight:700;margin:0}
+.ed-header button{background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:15px;line-height:1}
+.ed-body{padding:20px 24px;overflow-y:auto;flex:1}
+.ed-date-row{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.ed-date-row label{font-size:12px;font-weight:700;color:var(--at2);letter-spacing:.5px;text-transform:uppercase}
+.ed-date-row input[type=date]{background:#f5f8fb;border:1px solid var(--abd2);border-radius:6px;padding:9px 12px;font-size:14px;color:var(--at);outline:none;transition:.2s}
+.ed-date-row input[type=date]:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(2,136,209,.1)}
+.ed-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.ed-row{display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:center;padding:8px 10px;border-radius:6px;background:#f8fafc;border:1px solid #eef2f7}
+.ed-row label{font-size:13px;color:var(--at);font-weight:500}
+.ed-row input[type=number]{border:1px solid var(--abd2);border-radius:5px;padding:7px 10px;font-size:14px;font-weight:600;color:var(--at);background:#fff;width:100%;text-align:center;outline:none;transition:.2s}
+.ed-row input[type=number]:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(2,136,209,.1)}
+.ed-footer{padding:16px 24px;border-top:1px solid var(--abd);display:flex;gap:10px;flex-shrink:0;background:#fafcff}
 @media(max-width:1100px){.stat-cards{grid-template-columns:repeat(2,1fr)}.ranking-grid{grid-template-columns:1fr}}
-@media(max-width:700px){.stat-cards{grid-template-columns:1fr}.act-row{grid-template-columns:1fr}.content{padding:16px}}
+@media(max-width:700px){.stat-cards{grid-template-columns:1fr}.act-row{grid-template-columns:1fr}.content{padding:16px}.week-selector{flex-direction:column;align-items:flex-start}.week-nav{margin-left:0}}
 </style>
 </head>
 <body>
@@ -277,13 +308,28 @@ tr:hover td{background:#f5f9ff}
         <div class="panel-title">Dashboard Analítico</div>
         <div class="toolbar">
           <label style="font-size:13px;font-weight:600;color:var(--at2)">Período:</label>
-          <select class="sel" id="filtroDash" onchange="renderDashboard()">
+          <select class="sel" id="filtroDash" onchange="onFiltroDashChange()">
             <option value="hoy">Hoy</option>
+            <option value="dia">Día específico</option>
+            <option value="semana">Esta semana</option>
             <option value="mes">Este mes</option>
             <option value="historico">Histórico acumulado</option>
           </select>
+          <button class="btn btn-yellow" onclick="abrirEditarDia()">✏️ Editar día anterior</button>
           <button class="btn btn-green" onclick="exportarXLSX()">⬇ Exportar Excel</button>
           <button class="btn btn-cyan" onclick="exportarReporte()">📄 Reporte PDF</button>
+        </div>
+
+        <!-- Selector de semana (visible solo en modo semana/dia) -->
+        <div class="week-selector" id="weekSelector" style="display:none">
+          <span class="week-selector-label">Semana:</span>
+          <div id="weekDayBtns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+          <div class="week-nav">
+            <button onclick="navegarSemana(-1)" title="Semana anterior">◀</button>
+            <span id="weekRangeLabel"></span>
+            <button onclick="navegarSemana(1)" title="Semana siguiente">▶</button>
+            <button onclick="irSemanaActual()" style="margin-left:4px;font-size:11px;padding:6px 9px">HOY</button>
+          </div>
         </div>
 
         <div class="dash-metrics">
@@ -352,7 +398,7 @@ const HKEY="oft_stats_v5", SRV_KEY="oft_server_url";
 let currentPeriod='diario', usingCloud=false, ws=null, wsUrl='', wsReintento=null;
 let suppressRemoteSave=false;
 let lastSavedJSON='';
-let lastLocalSaveTime=0; // timestamp del último guardado local
+let lastLocalSaveTime=0;
 let currentUserRole='ventanilla';
 
 // ===== TOAST =====
@@ -436,8 +482,6 @@ function intentarConexionWS(){
         if((msg.tipo==='inicial'||msg.tipo==='actualizacion') && msg.datos){
           const incoming = JSON.stringify(msg.datos||{});
           const current = localStorage.getItem(HKEY) || '{}';
-          // Ignorar mensajes del servidor dentro de 2s despues de un guardado local
-          // Evita race condition: servidor responde con datos viejos y sobreescribe el +1
           const msSinceLocalSave = Date.now() - lastLocalSaveTime;
           if(msg.tipo==='actualizacion' && msSinceLocalSave < 2000) return;
           if(incoming !== current){
@@ -474,7 +518,7 @@ function saveH(h){
   if(payload === lastSavedJSON) return;
   localStorage.setItem(HKEY, payload);
   lastSavedJSON = payload;
-  lastLocalSaveTime = Date.now(); // marcar tiempo de guardado local
+  lastLocalSaveTime = Date.now();
 
   if(suppressRemoteSave) return;
 
@@ -602,9 +646,110 @@ function borrarHistorial(){
 }
 
 // ===== DASHBOARD =====
+// Estado del selector de semana
+let dashWeekOffset = 0;   // 0 = semana actual, -1 = semana pasada, etc.
+let dashSelectedDay = fk(); // día seleccionado en modo "dia"
+
+function getLunesDeSemana(offset){
+  const hoy = new Date();
+  const dow = hoy.getDay(); // 0=dom,1=lun,...
+  const diffLunes = (dow === 0 ? -6 : 1 - dow);
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() + diffLunes + offset * 7);
+  lunes.setHours(0,0,0,0);
+  return lunes;
+}
+function dateToKey(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function keyToDate(k){
+  const [y,m,d]=k.split('-');
+  return new Date(+y,+m-1,+d);
+}
+
+function onFiltroDashChange(){
+  const f = document.getElementById('filtroDash').value;
+  const ws = document.getElementById('weekSelector');
+  if(f === 'semana' || f === 'dia'){
+    ws.style.display = 'flex';
+    renderWeekSelector();
+  } else {
+    ws.style.display = 'none';
+  }
+  renderDashboard();
+}
+
+function renderWeekSelector(){
+  const f = document.getElementById('filtroDash').value;
+  const lunes = getLunesDeSemana(dashWeekOffset);
+  const h = getH();
+  const hoyKey = fk();
+  const dias = ['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+  const container = document.getElementById('weekDayBtns');
+  container.innerHTML = '';
+
+  for(let i=0;i<7;i++){
+    const d = new Date(lunes); d.setDate(lunes.getDate()+i);
+    const key = dateToKey(d);
+    const tieneData = h[key] && actividades.some(a=>(h[key][a]||0)>0);
+    const esHoy = key === hoyKey;
+    const esFuturo = key > hoyKey;
+    if(esFuturo) continue; // no mostrar días futuros
+    const btn = document.createElement('button');
+    btn.className = 'day-btn' +
+      (esHoy ? ' today' : '') +
+      (!tieneData ? ' no-data' : '') +
+      (dashSelectedDay === key ? ' active' : '');
+    btn.title = fCL(key);
+    btn.innerHTML = `<span style="display:block;font-size:10px;opacity:.7">${dias[i]}</span>${d.getDate()}`;
+    btn.onclick = () => { dashSelectedDay = key; renderWeekSelector(); renderDashboard(); };
+    container.appendChild(btn);
+  }
+
+  // Label de rango
+  const domingo = new Date(lunes); domingo.setDate(lunes.getDate()+6);
+  document.getElementById('weekRangeLabel').textContent =
+    `${lunes.getDate()}/${lunes.getMonth()+1} – ${domingo.getDate()}/${domingo.getMonth()+1}`;
+}
+
+function navegarSemana(delta){
+  dashWeekOffset += delta;
+  // Al navegar, seleccionar el lunes de la nueva semana (o hoy si es semana actual)
+  const lunes = getLunesDeSemana(dashWeekOffset);
+  const hoyKey = fk();
+  const lunesKey = dateToKey(lunes);
+  dashSelectedDay = dashWeekOffset === 0 ? hoyKey : lunesKey;
+  renderWeekSelector();
+  renderDashboard();
+}
+
+function irSemanaActual(){
+  dashWeekOffset = 0;
+  dashSelectedDay = fk();
+  renderWeekSelector();
+  renderDashboard();
+}
+
 function getDashData(){
-  const f=document.getElementById('filtroDash').value,h=asegurarHoy();
-  if(f==='hoy')return{label:'Hoy',data:{...h[fk()]}};
+  const f=document.getElementById('filtroDash').value, h=asegurarHoy();
+  if(f==='hoy') return {label:'Hoy',data:{...h[fk()]}};
+  if(f==='dia'){
+    const d = h[dashSelectedDay] || dV();
+    return {label: fCL(dashSelectedDay), data:{...d}};
+  }
+  if(f==='semana'){
+    const lunes = getLunesDeSemana(dashWeekOffset);
+    const ac = dV();
+    const hoyKey = fk();
+    for(let i=0;i<7;i++){
+      const day = new Date(lunes); day.setDate(lunes.getDate()+i);
+      const key = dateToKey(day);
+      if(key > hoyKey) break;
+      if(h[key]) actividades.forEach(a=>ac[a]+=(h[key][a]||0));
+    }
+    const dom = new Date(lunes); dom.setDate(lunes.getDate()+6);
+    return {label:`Semana ${lunes.getDate()}/${lunes.getMonth()+1}–${dom.getDate()}/${dom.getMonth()+1}`, data:ac};
+  }
   if(f==='mes'){const m=mk(),ac=dV();Object.entries(h).forEach(([k,d])=>{if(k.startsWith(m))actividades.forEach(a=>ac[a]+=(d[a]||0));});return{label:'Mes '+m,data:ac};}
   const ac=dV();Object.values(h).forEach(d=>actividades.forEach(a=>ac[a]+=(d[a]||0)));return{label:'Histórico',data:ac};
 }
@@ -615,6 +760,62 @@ function renderDashboard(){
   document.getElementById('dashActivas').textContent=Object.values(data).filter(v=>v>0).length;
   document.getElementById('chartTitle').textContent=`DISTRIBUCIÓN DE ACTIVIDADES — ${label.toUpperCase()}`;
   dibujarGrafico(data);renderRanking(data);renderResumenHist();
+}
+
+// ===== MODAL EDITAR DÍA =====
+function abrirEditarDia(){
+  // Fecha máxima = ayer (hoy se edita en el registro normal)
+  const ayer = new Date(); ayer.setDate(ayer.getDate()-1);
+  const ayerKey = dateToKey(ayer);
+  const input = document.getElementById('edFecha');
+  input.max = ayerKey;
+  input.value = ayerKey;
+  cargarDatosDiaEditar();
+  document.getElementById('edMsg').textContent = '';
+  document.getElementById('editDayModal').classList.add('open');
+}
+function cerrarEditarDia(){
+  document.getElementById('editDayModal').classList.remove('open');
+}
+function cargarDatosDiaEditar(){
+  const fecha = document.getElementById('edFecha').value;
+  if(!fecha) return;
+  const h = getH();
+  const datos = (h[fecha] && typeof h[fecha] === 'object') ? h[fecha] : dV();
+  // Label de día
+  const [y,m,d] = fecha.split('-');
+  const dateObj = new Date(+y,+m-1,+d);
+  const diasNombre = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  document.getElementById('edFechaLabel').textContent =
+    `${diasNombre[dateObj.getDay()]} ${d}-${m}-${y}`;
+  // Renderizar campos
+  const grid = document.getElementById('edGrid');
+  grid.innerHTML = actividades.map(a=>`
+    <div class="ed-row">
+      <label>${a}</label>
+      <input type="number" min="0" step="1" value="${datos[a]||0}" id="edf_${a.replace(/\s+/g,'_')}"/>
+    </div>`).join('');
+  document.getElementById('edMsg').textContent = '';
+}
+function guardarDiaEditado(){
+  const fecha = document.getElementById('edFecha').value;
+  if(!fecha){ toast('Selecciona una fecha','err'); return; }
+  const h = asegurarHoy();
+  if(!h[fecha]) h[fecha] = dV();
+  let cambios = 0;
+  actividades.forEach(a=>{
+    const id = 'edf_'+a.replace(/\s+/g,'_');
+    const el = document.getElementById(id);
+    if(el){
+      const val = Math.max(0, parseInt(el.value)||0);
+      if(val !== (h[fecha][a]||0)) cambios++;
+      h[fecha][a] = val;
+    }
+  });
+  saveH(h);
+  render();
+  document.getElementById('edMsg').textContent = `✓ Guardado (${cambios} cambio${cambios!==1?'s':''})`;
+  toast(`✓ Día ${fCL(fecha)} actualizado`,'ok',2500);
 }
 
 // ===== GRÁFICO =====
@@ -858,5 +1059,28 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
 window.addEventListener('resize',()=>{if(document.getElementById('v-dashboard').classList.contains('active'))renderDashboard();});
 setInterval(()=>{if(document.getElementById('app').style.display!=='none')renderTopbar();},60000);
 </script>
+<!-- MODAL EDITAR DÍA -->
+<div id="editDayModal">
+  <div class="ed-box">
+    <div class="ed-header">
+      <h2>✏️ Editar datos de un día</h2>
+      <button onclick="cerrarEditarDia()">✕</button>
+    </div>
+    <div class="ed-body">
+      <div class="ed-date-row">
+        <label>Fecha:</label>
+        <input type="date" id="edFecha" onchange="cargarDatosDiaEditar()"/>
+        <span id="edFechaLabel" style="font-size:13px;color:var(--at3)"></span>
+      </div>
+      <div class="ed-grid" id="edGrid"></div>
+    </div>
+    <div class="ed-footer">
+      <button class="btn btn-green" onclick="guardarDiaEditado()">💾 Guardar cambios</button>
+      <button class="btn btn-cyan" onclick="cerrarEditarDia()">Cancelar</button>
+      <span id="edMsg" style="font-size:13px;color:#2e7d32;margin-left:auto;align-self:center"></span>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
