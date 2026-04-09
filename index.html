@@ -542,6 +542,19 @@ function renderLista(){
   const isDi=currentPeriod==='diario';
   const disp=isDi?datosHoy():datosMes();
   const c=document.getElementById('listaActs');
+  const existingRows=c.querySelectorAll('.act-row');
+  // Si ya existen las filas correctas, solo actualizar valores (evita destruir DOM y "congelar" botones)
+  if(existingRows.length===actividades.length && c.dataset.period===currentPeriod){
+    actividades.forEach((nombre,i)=>{
+      const row=existingRows[i];
+      row.querySelector('.counter-box strong').textContent=disp[nombre]||0;
+      row.querySelector('.act-tag').textContent=isDi?'Registro rápido diario':'Acumulado mes '+mk();
+      row.querySelector('.counter-box span').textContent=isDi?'HOY':'MES';
+    });
+    return;
+  }
+  // Construcción inicial o cambio de período
+  c.dataset.period=currentPeriod;
   c.innerHTML='';
   actividades.forEach(nombre=>{
     const row=document.createElement('div');
@@ -570,9 +583,15 @@ function actualizar(nombre,delta,rowEl){
   const h=asegurarHoy(),hoy=fk();
   h[hoy][nombre]=Math.max(0,(h[hoy][nombre]||0)+delta);
   saveH(h);
-  if(rowEl){rowEl.classList.remove('flash');void rowEl.offsetWidth;rowEl.classList.add('flash');}
+  // Actualizar solo el contador de esta fila, sin redibujar toda la lista
+  if(rowEl){
+    const strong=rowEl.querySelector('.counter-box strong');
+    if(strong) strong.textContent=h[hoy][nombre];
+    rowEl.classList.remove('flash');void rowEl.offsetWidth;rowEl.classList.add('flash');
+  }
   toast(delta>0?`✓ ${nombre} → ${h[hoy][nombre]}`:`↩ ${nombre} → ${h[hoy][nombre]}`,'ok',1400);
-  render();
+  // Actualizar cabecera y dashboard sin reconstruir la lista
+  renderTopbar();renderCabecera();renderDashboard();renderHistorial();renderChips();
 }
 function reiniciarPeriodo(){
   if(!confirm(currentPeriod==='diario'?'¿Reiniciar conteo del día actual?':'¿Reiniciar el día de hoy?'))return;
