@@ -352,6 +352,7 @@ const HKEY="oft_stats_v5", SRV_KEY="oft_server_url";
 let currentPeriod='diario', usingCloud=false, ws=null, wsUrl='', wsReintento=null;
 let suppressRemoteSave=false;
 let lastSavedJSON='';
+let lastLocalSaveTime=0; // timestamp del último guardado local
 let currentUserRole='ventanilla';
 
 // ===== TOAST =====
@@ -435,6 +436,10 @@ function intentarConexionWS(){
         if((msg.tipo==='inicial'||msg.tipo==='actualizacion') && msg.datos){
           const incoming = JSON.stringify(msg.datos||{});
           const current = localStorage.getItem(HKEY) || '{}';
+          // Ignorar mensajes del servidor dentro de 2s despues de un guardado local
+          // Evita race condition: servidor responde con datos viejos y sobreescribe el +1
+          const msSinceLocalSave = Date.now() - lastLocalSaveTime;
+          if(msg.tipo==='actualizacion' && msSinceLocalSave < 2000) return;
           if(incoming !== current){
             suppressRemoteSave = true;
             localStorage.setItem(HKEY, incoming);
@@ -469,6 +474,7 @@ function saveH(h){
   if(payload === lastSavedJSON) return;
   localStorage.setItem(HKEY, payload);
   lastSavedJSON = payload;
+  lastLocalSaveTime = Date.now(); // marcar tiempo de guardado local
 
   if(suppressRemoteSave) return;
 
@@ -542,19 +548,6 @@ function renderLista(){
   const isDi=currentPeriod==='diario';
   const disp=isDi?datosHoy():datosMes();
   const c=document.getElementById('listaActs');
-  const existingRows=c.querySelectorAll('.act-row');
-  // Si ya existen las filas correctas, solo actualizar valores (evita destruir DOM y "congelar" botones)
-  if(existingRows.length===actividades.length && c.dataset.period===currentPeriod){
-    actividades.forEach((nombre,i)=>{
-      const row=existingRows[i];
-      row.querySelector('.counter-box strong').textContent=disp[nombre]||0;
-      row.querySelector('.act-tag').textContent=isDi?'Registro rápido diario':'Acumulado mes '+mk();
-      row.querySelector('.counter-box span').textContent=isDi?'HOY':'MES';
-    });
-    return;
-  }
-  // Construcción inicial o cambio de período
-  c.dataset.period=currentPeriod;
   c.innerHTML='';
   actividades.forEach(nombre=>{
     const row=document.createElement('div');
@@ -583,15 +576,9 @@ function actualizar(nombre,delta,rowEl){
   const h=asegurarHoy(),hoy=fk();
   h[hoy][nombre]=Math.max(0,(h[hoy][nombre]||0)+delta);
   saveH(h);
-  // Actualizar solo el contador de esta fila, sin redibujar toda la lista
-  if(rowEl){
-    const strong=rowEl.querySelector('.counter-box strong');
-    if(strong) strong.textContent=h[hoy][nombre];
-    rowEl.classList.remove('flash');void rowEl.offsetWidth;rowEl.classList.add('flash');
-  }
+  if(rowEl){rowEl.classList.remove('flash');void rowEl.offsetWidth;rowEl.classList.add('flash');}
   toast(delta>0?`✓ ${nombre} → ${h[hoy][nombre]}`:`↩ ${nombre} → ${h[hoy][nombre]}`,'ok',1400);
-  // Actualizar cabecera y dashboard sin reconstruir la lista
-  renderTopbar();renderCabecera();renderDashboard();renderHistorial();renderChips();
+  render();
 }
 function reiniciarPeriodo(){
   if(!confirm(currentPeriod==='diario'?'¿Reiniciar conteo del día actual?':'¿Reiniciar el día de hoy?'))return;
