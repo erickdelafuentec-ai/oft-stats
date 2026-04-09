@@ -426,10 +426,20 @@ function intentarLogin(){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('app').style.display='block';
   document.querySelector('.user-badge').textContent = currentUserRole.toUpperCase();
-  const srv=localStorage.getItem(SRV_KEY);
-  if(srv){reconectarWS(srv);}
-  else{
-    const autoUrl=window.location.origin;
+
+  const esArchivoLocal = window.location.protocol === 'file:';
+  const srv = localStorage.getItem(SRV_KEY);
+
+  if(esArchivoLocal){
+    // Abierto como archivo local — no intentar WebSocket
+    setSyncBadge('local');
+    toast('💾 Modo local (archivo directo)','ok',2500);
+  } else if(srv && srv !== window.location.origin){
+    // Hay una URL de servidor guardada distinta al origen actual
+    reconectarWS(srv);
+  } else {
+    // Intentar conectar al mismo servidor que sirve la página
+    const autoUrl = window.location.origin;
     localStorage.setItem(SRV_KEY, autoUrl);
     reconectarWS(autoUrl);
   }
@@ -466,13 +476,14 @@ function reconectarWS(baseUrl){
   else wsUrl=baseUrl;
   intentarConexionWS();
 }
+let wsFailCount = 0;
 function intentarConexionWS(){
   if(wsReintento){clearTimeout(wsReintento);wsReintento=null;}
   if(ws && ws.readyState!==WebSocket.CLOSED){ws.onclose=null;ws.close();}
   try{
     ws=new WebSocket(wsUrl);
     ws.onopen=()=>{
-      usingCloud=true; setSyncBadge('cloud');
+      usingCloud=true; wsFailCount=0; setSyncBadge('cloud');
       document.getElementById('fbModal').classList.remove('open');
       toast('☁ Conectado al servidor Railway','ok',3000);
     };
@@ -496,12 +507,18 @@ function intentarConexionWS(){
     };
     ws.onclose=(e)=>{
       usingCloud=false; setSyncBadge('local');
-      if(wsUrl) wsReintento=setTimeout(intentarConexionWS,5000);
+      wsFailCount++;
+      // Después de 3 intentos fallidos, detener reintentos automáticos
+      if(wsUrl && wsFailCount < 3){
+        wsReintento=setTimeout(intentarConexionWS, 5000);
+      } else if(wsFailCount >= 3){
+        toast('⚠ Sin servidor — trabajando en modo local','err',4000);
+        wsUrl=''; // detener reintentos
+      }
     };
     ws.onerror=()=>{};
   }catch(e){
     setSyncBadge('local');
-    toast('Error al conectar con el servidor','err');
     if(wsUrl) wsReintento=setTimeout(intentarConexionWS,8000);
   }
 }

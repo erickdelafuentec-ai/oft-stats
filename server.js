@@ -12,29 +12,41 @@ const PORT = process.env.PORT || 8080;
 const DATA_FILE = path.join(__dirname, 'data.json');
 const INDEX_FILE = path.join(__dirname, 'index.html');
 
+// ============================================================
+// STORAGE — con respaldo en memoria para Railway (fs efímero)
+// ============================================================
+let memoriaCache = {};
+
 function leerDatos() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf8');
-      return raw ? JSON.parse(raw) : {};
+      const parsed = raw ? JSON.parse(raw) : {};
+      memoriaCache = parsed;
+      return parsed;
     }
   } catch (e) {
     console.error('Error leyendo datos:', e.message);
   }
-  return {};
+  return memoriaCache;
 }
 
 function guardarDatos(datos) {
+  // Siempre actualizar memoria
+  memoriaCache = datos || {};
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(datos, null, 2), 'utf8');
-    return true;
+    fs.writeFileSync(DATA_FILE, JSON.stringify(memoriaCache, null, 2), 'utf8');
   } catch (e) {
-    console.error('Error guardando datos:', e.message);
-    return false;
+    // En Railway el FS puede ser de solo lectura en algunos casos
+    console.warn('No se pudo guardar en disco (usando memoria):', e.message);
   }
+  return true;
 }
 
-app.use(express.json({ limit: '5mb' }));
+// ============================================================
+// MIDDLEWARES
+// ============================================================
+app.use(express.json({ limit: '10mb' }));
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -46,6 +58,9 @@ app.use((req, res, next) => {
 
 app.use(express.static(__dirname));
 
+// ============================================================
+// RUTAS
+// ============================================================
 app.get('/', (req, res) => {
   if (!fs.existsSync(INDEX_FILE)) {
     return res.status(500).send('Error: index.html no encontrado');
@@ -54,7 +69,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, service: 'oft-stats-clinico' });
+  res.json({ ok: true, service: 'oft-stats-clinico', timestamp: new Date().toISOString() });
 });
 
 app.get('/api/datos', (req, res) => {
@@ -63,34 +78,40 @@ app.get('/api/datos', (req, res) => {
 
 app.post('/api/datos', (req, res) => {
   const datos = req.body || {};
-  const ok = guardarDatos(datos);
+  guardarDatos(datos);
 
-  if (!ok) {
-    return res.status(500).json({ ok: false });
-  }
-
+  // Broadcast a todos los clientes WebSocket conectados
   const msg = JSON.stringify({ tipo: 'actualizacion', datos });
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(msg);
+      try { client.send(msg); } catch (e) {}
     }
   });
 
   res.json({ ok: true });
 });
 
+// ============================================================
+// WEBSOCKET
+// ============================================================
 wss.on('connection', (ws) => {
-  console.log('Cliente conectado');
+  console.log('Cliente WebSocket conectado');
 
-  ws.send(JSON.stringify({
-    tipo: 'inicial',
-    datos: leerDatos()
-  }));
+  // Enviar datos actuales al conectarse
+  try {
+    ws.send(JSON.stringify({ tipo: 'inicial', datos: leerDatos() }));
+  } catch (e) {}
 
   ws.on('close', () => console.log('Cliente desconectado'));
   ws.on('error', () => {});
 });
 
+// ============================================================
+// INICIO
+// ============================================================
+// Cargar datos al iniciar para poblar memoriaCache
+leerDatos();
+
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log(`OFT-STATS servidor corriendo en puerto ${PORT}`);
 });
